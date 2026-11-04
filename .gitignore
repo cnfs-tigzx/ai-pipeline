@@ -1,0 +1,22 @@
+# ========== 核心：repos 整个目录全部不上传（下游项目源码、备份、编译产物）
+repos/
+output/
+# 本地环境、密钥、缓存
+.env
+.venv/
+venv/
+__pycache__/
+*.pyc
+.DS_Store
+
+# docker 本地缓存、镜像包
+docker-data/
+*.tar
+
+# vscode 本地配置
+.vscode/
+.idea/
+
+# 临时文件
+*.tmp
+*.bak

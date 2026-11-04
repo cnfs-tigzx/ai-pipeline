@@ -1,0 +1,203 @@
+# Cline 流水线规则｜GLM-5.2 + 火山方舟
+> 工作根目录：/Users/tigzx/workspace/ai-pipeline
+> 所有任务必须优先调用MCP工具，禁止编造内容、猜测文件、网页输出。
+
+## 基础行为约束
+1. 工具调用优先级：filesystem（读写文件） > 内置Terminal（shell/git） > playwright（网页抓取）
+2. 禁止直接输出大段代码，所有代码、json、文档必须使用 filesystem write_file 写入磁盘。
+3. 推理模式：严谨、结构化，不发散，温度等效0。
+4. 执行任何任务前，先输出【任务规划】，列出步骤，确认后再执行。
+5. 所有任务日志追加写入 `output/task-log.md`，记录时间、动作、结果。
+
+## GitHub仓库自动化流水线（固定流程）
+收到仓库自动化任务，严格按顺序执行：
+1. 拉取代码：使用Terminal执行git clone / git pull，仓库落地到 `repos/`
+2. 定位文档：扫描仓库根目录，寻找 README.md / README-CN.md / readme.md
+3. 解析README：提取项目简介、技术栈、依赖、启动命令、构建方式、配置项、接口、已知坑；输出结构化JSON保存到 `readme-parse/`
+4. 构建知识库：基于解析结果拆分为可读知识文档，存入 `knowledge/`
+5. 环境部署校验：读取启动命令，执行依赖安装、构建、启动，校验服务可用性
+6. 生成报告：输出完整报告到 `output/xxx-report.md`，包含仓库路径、依赖清单、启动命令、访问地址、风险点
+
+## Playwright 网页表格抓取专项规则
+抓取网页表格任务时：
+1. playwright打开页面，等待页面、接口、表格渲染完成，不使用硬编码xpath，优先table语义选择器
+2. 提取表头+全部行，同时输出 markdown表格 + json两份
+3. 结果写入 `knowledge/table-xxx.json`
+4. 自动录入场景：识别表单字段，按行循环填充提交，捕获报错、截图留存
+
+## 安全边界
+- 仅允许在 `/Users/tigzx/workspace/ai-pipeline` 目录内读写文件，禁止访问上级、系统目录
+- Terminal执行命令前，先输出完整命令，等待确认；高危命令 rm -rf 必须人工确认
+- 不修改系统全局环境，所有环境操作隔离在流水线目录内
+
+## 部署校验阶段（Docker / Docker Compose，OrbStack + Apple Silicon M6）
+> 本机环境：Mac Mini M6(arm64) 24G，OrbStack，docker compose 可用
+> 部署阶段仅在仓库目录内执行，不修改宿主机全局docker配置
+
+部署校验固定流程（在README解析完成后执行）：
+1. 读取 readme-parse/{name}.json 内的部署信息：docker-compose文件路径、端口、环境变量、构建命令、资源要求
+2. 在仓库目录扫描 docker-compose.yml / docker-compose.yaml / compose.yml
+3. 自动识别镜像架构：区分 arm64 / amd64；如果镜像仅amd64，在报告标注风险，可自动追加 --platform linux/amd64
+4. 执行前置检查：
+   - 检查端口是否被宿主机占用
+   - 检查compose文件语法合法性（docker compose config）
+5. 执行拉起：docker compose up -d；设置超时等待服务就绪
+6. 健康检测：对文档标注的Web/API端口做http探测，记录返回码
+7. 采集：docker compose logs 最近50行，写入部署日志
+8. 收尾：成功则记录访问地址；失败区分：镜像架构不兼容、资源不足、配置缺失、依赖报错，给出针对性修复方案
+9. 产物输出：
+   - output/{name}-deploy-log.md 部署完整日志
+   - 更新 output/{name}-report.md，追加【部署验证章节】
+   - 知识库 knowledge/{name}-summary.md 补充部署踩坑清单
+
+部署安全约束：
+- 禁止自动执行 docker system prune、rm -rf 等高风险清理命令
+- 拉起前先打印完整 compose 命令，等待确认
+- 资源建议：OrbStack虚拟机分配内存不超过 16G（宿主机24G）
+- 若项目需要build，优先使用支持multiarch的Dockerfile，不强制修改Dockerfile，仅输出修改建议
+
+## GitHub 网页使用手册抓取专项规则
+目标：从项目GitHub仓库网页（不是本地README）抓取系统操作说明、功能菜单、使用步骤、界面介绍、使用示例、参数说明，生成面向终端用户的《系统使用手册》
+1. 使用 playwright MCP 访问项目github仓库页面，优先抓取：Usage、User Guide、使用教程、功能说明、操作步骤、截图说明、业务流程板块
+2. 区分：技术部署文档（已经存在的report/summary） 和 用户使用手册（面向使用者，不包含编译、docker部署）
+3. 内容清洗：剔除部署、编译、开发、本地启动、源码相关内容；保留功能介绍、操作流程、页面说明、表单字段、使用限制、常见业务问题
+4. 结构模板固定：
+    - 1. 系统概述
+    - 2. 功能模块总览
+    - 3. 各模块操作步骤
+    - 4. 界面字段说明
+    - 5. 使用示例
+    - 6. 常见使用问题（业务层面，非部署报错）
+5. 产物输出：
+   - knowledge/{name}-user-manual.md 【系统使用手册】
+   - readme-parse/{name}-user-capture.json 原始抓取结构化素材
+6. 约束：
+   - 不抓取issues、PR、开发TODO；只抓取仓库主页/wiki/docs里的使用教程
+   - 如果仓库有独立docs/wiki链接，优先进入wiki/docs页面抓取
+   - 抓取完成后，在任务日志追加记录
+
+## 源码自动化修改 & 重新发布流水线规则
+> 适用：前端界面标识、静态资源、常量文本替换；执行后重新构建镜像、重启compose服务
+> 仓库目录：repos/WeKnora，运行环境：Mac Mini M6 + OrbStack
+
+### 前置约束
+1. 修改前**先备份**：对要改动的文件生成备份副本，存放至 repos/WeKnora/.auto-bak/，按时间戳命名
+2. 搜索范围：仅仓库源码目录，禁止修改流水线ai-pipeline自身的文档、知识库、报告
+3. 黑白名单：
+   ✅ 需要检索：前端vue/ts/js/html/svg、静态图片资源、前端常量、后端配置、swagger文案、页面title、导航栏文字
+   ❌ 跳过：README、docs、git文件、node_modules、dist、docker构建产物、.git目录、我们流水线产出的knowledge/readme-parse/output
+4. 图片替换逻辑：
+   - 找到原有logo图片路径
+   - 优先：如果提供新图片，写入对应路径；本次需求文字替换：找到图片引用标记，替换图片资源
+   - svg内嵌文字：直接修改svg内部文本节点
+5. 文本替换逻辑：全局区分大小写，按需精准替换；避免误替换变量名、包名、接口路由等关键字段
+6. 所有修改动作，每一个文件变更，写入变更清单
+
+### 执行顺序（固定流程）
+1. 读取变更需求，输出【变更执行计划】，列出检索关键词、目标文件类型、替换规则
+2. 仓库内检索匹配文件，生成待修改清单，先展示清单，确认后再写入修改
+3. 备份所有待修改文件到 .auto-bak/时间戳/
+4. 批量执行文本/资源替换
+5. 执行构建前置校验：前端build编译、后端编译，捕获编译报错
+6. 重新构建docker镜像（docker compose build）
+7. 停止旧服务、拉起新版本：docker compose up -d
+8. 健康探测：访问web页面，校验logo、标题、文字是否已经更新
+9. 产物输出：
+   - output/WeKnora-change-log.md：完整变更记录（文件路径、原始内容片段、修改后内容、备份路径）
+   - 更新 output/WeKnora-report.md，追加【版本变更发布记录】
+   - 日志追加到 output/task-log.md
+
+### 安全红线
+- 高危操作（批量sed全局替换）**禁止无确认直接执行**，必须先列出匹配文件清单，人工确认
+- 编译失败时，自动回滚：从备份恢复文件，恢复上一版本镜像，不保留损坏版本
+- 不强制修改数据库内存储的名称，只修改代码、静态资源、前端展示文案
+- 构建前先校验：OrbStack资源，避免24G内存耗尽
+
+## Logo 图片全量替换规则
+目标：将产品源码中所有界面 Logo 图片、品牌图标、页面展示图统一替换为 Tigzx 标识。
+
+1. 替换源目录：/Users/tigzx/workspace/ai-pipeline/assets/tigzx-logo/
+2. 检索范围：
+   - 顶部栏 Logo
+   - 侧边栏 Logo
+   - 登录页 Logo
+   - 首页/欢迎页品牌图
+   - SVG 品牌图标
+   - favicon / app icon / PWA icon
+   - 静态资源目录下的 logo、brand、icon、watermark 相关图片
+3. 替换策略：
+   - 找到原有 Logo 图片路径后，优先保持原路径、原文件名，覆盖写入新 Logo
+   - 如果原文件是 svg/jpg/webp，将替换的用 png格式的Tigzx Logo文件转化为原文件同格式覆盖
+   - 如果原文件是组件中 import 的图标，替换 import 指向的资源文件
+4. 备份要求：
+   - 所有被覆盖的图片文件，先备份到 repos/WeKnora/.auto-bak/时间戳/logo/
+5. 校验要求：
+   - 替换后执行前端构建校验
+   - 重新构建 docker 镜像并启动
+   - 使用 playwright 访问页面，截图验证顶部、侧边栏、登录页、首页 Logo 是否更新
+6. 产物输出：
+   - output/WeKnora-logo-change-log.md：Logo 替换清单、备份路径、验证结果
+
+## 一键运维启停脚本规范
+脚本路径：scripts/one-key.sh
+用途：对 WeKnora 服务进行统一构建、启停、重启、状态查看，适配 OrbStack（docker context=orbstack）
+执行方式：在 ai-pipeline 根目录执行 `./scripts/one-key.sh <动作>`
+支持动作（5 个）：
+- start：后台启动全部服务（docker compose up -d）
+- stop：停止并销毁容器（docker compose down）
+- restart：停止后重新拉起服务（down + up -d）
+- build：重新构建 docker 镜像（修改代码/静态资源后执行；**不自动重启**，需手动 restart）
+- status：查看容器运行状态（docker compose ps）
+辅助：`--help` / `-h` / `help` 输出用法；无参数或错误参数输出用法并 exit 1
+健壮性要求（脚本内置）：
+- `set -euo pipefail`，docker compose 经 `2>&1 | tee` 落日志时 pipefail 保证失败不被掩盖
+- 前置检查：docker / docker compose 可用性、仓库目录存在性、compose 文件自动识别（docker-compose.yml→.yaml→compose.yml→.yaml）
+- 镜像目录创建：`mkdir -p` 确保 output 目录存在后再写日志
+日志：操作记录自动写入 output/one-key-operation.log（每行带时间戳头）
+使用示例（在 ai-pipeline 根目录执行）：
+./scripts/one-key.sh start
+./scripts/one-key.sh stop
+./scripts/one-key.sh restart
+./scripts/one-key.sh build
+./scripts/one-key.sh status
+./scripts/one-key.sh --help
+访问地址：启动/重启后前端 http://localhost、后端 API http://localhost:8080
+
+## Git一键仓库管理脚本规范
+脚本路径：scripts/git-push.sh
+依赖：git + GitHub CLI gh；首次使用前执行 `gh auth login`（复用 VSCode 登录的 GitHub 账号）
+仓库名称：ai-pipeline（默认公开，可在脚本顶部 REPO_PRIVATE 切换为私有）
+> 重要规则：**仅上传 ai-pipeline 流水线工程本身，repos/ 整个目录被忽略，下游项目源码、备份、编译部署产物不上传 GitHub**
+
+支持参数（4 个动作 + 辅助）：
+- init：【首次执行/安全可重入】自动检测 GitHub 仓库是否存在：
+    - 不存在 → 自动新建仓库（按 REPO_PRIVATE 决定公开/私有），再本地提交并推送；
+    - 已存在 → 直接关联 origin 并推送，不报错。
+  重复执行 init 不会重复创建、不会报错，适合换设备/重置后一键恢复。
+- sync：流水线脚本/规则/报告修改完成后，一键提交所有变更并推送到 GitHub；推送被拒时自动 rebase 后重试。
+- pull：一键拉取 GitHub 远端流水线代码更新本地（换设备、多机器同步时使用）；遇冲突暂停，人工处理冲突后重新 sync。
+- status：查看 git 状态、远程地址，并打开 GitHub 仓库网页。
+辅助：`--help` / `-h` / `help` 输出用法；无参数或错误参数输出用法并 exit 1。
+
+健壮性要求（脚本内置）：
+- `set -euo pipefail`，`git ... | tee` 落日志时 pipefail 保证失败不被掩盖。
+- 前置检查：git/gh 可用性、`gh auth status` 登录态、git user.name/user.email（缺失时自动从 gh 账号补齐，邮箱用 GitHub noreply）。
+- 安全闸门：执行 init/sync 前校验 `.gitignore` 已忽略 `repos/`，未忽略则拒绝提交并退出，杜绝下游源码泄漏。
+- 仓库检测用 owner 限定名（`<login>/ai-pipeline`），避免裸名解析歧义；`gh repo create` 用裸名创建到当前账号下。
+- 推送容错：`git push` 被拒（远端已有新提交）时自动 `git pull --rebase` 后重试；rebase 冲突则停止并提示人工处理。
+- 日志目录：`mkdir -p output/` 后再写 `output/git-push.log`（每行带时间戳头）。
+
+日志：操作记录写入 output/git-push.log
+使用示例（ai-pipeline 根目录执行）：
+./scripts/git-push.sh init
+./scripts/git-push.sh sync
+./scripts/git-push.sh pull
+./scripts/git-push.sh status
+./scripts/git-push.sh --help
+
+约束：
+1. .gitignore 配置忽略整个 repos/ 目录，隔离下游被改造项目、编译产物、自动备份文件（脚本每次执行前强制校验）。
+2. init 安全可重入：仓库不存在就创建，已经存在就直接关联，不会报错；可重复执行。
+3. 拉取 pull 遇冲突时脚本会暂停并提示，人工处理冲突后再继续。
+4. 远端仓库只存放流水线框架，不托管下游业务项目源码。
+

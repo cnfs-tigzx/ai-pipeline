@@ -134,8 +134,8 @@ case "${ACTION}" in
                 VIS_FLAG="--public"
                 VIS_TEXT="公开"
             fi
-            gh repo create "${REPO_NAME}" ${VIS_FLAG} --description "${REPO_DESC}" \
-                || die "创建 GitHub 仓库失败，请检查 gh 权限或是否存在同名仓库"
+            gh repo create "${REPO_NAME}" ${VIS_FLAG} --description "${REPO_DESC}" --no-readme \
+            || die "创建 GitHub 仓库失败，请检查 gh 权限或是否存在同名仓库"
             log "✅ 已创建 GitHub 仓库：${REPO_FULL}（${VIS_TEXT}）"
         fi
 

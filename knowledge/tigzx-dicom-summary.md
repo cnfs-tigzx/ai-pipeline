@@ -42,7 +42,7 @@ package.json dev 脚本固定 `vite --host 0.0.0.0 --port 5173 --strictPort`；R
 
 ### 访问地址
 
-- 前端工作台：http://127.0.0.1:5173/（示例带参 http://192.168.180.1:5173/?projectId=100091&patientId=100078）
+- 前端工作台：http://127.0.0.1:5173/（示例带参 http://127.0.0.1:5173/?projectId=100091&patientId=100078）
 - 后端 API：http://127.0.0.1:8080（前端 /api 代理指向此）
 
 ## 五、构建方式

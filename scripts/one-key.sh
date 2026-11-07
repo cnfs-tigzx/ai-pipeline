@@ -75,6 +75,9 @@ done
 if [ "${DEPLOY_MODE}" = "unknown" ] && [ -f "${REPO_DIR}/backend/pom.xml" ] && [ -d "${REPO_DIR}/frontend" ]; then
     DEPLOY_MODE="native-java-node"
 fi
+if [ "${DEPLOY_MODE}" = "unknown" ] && [ -f "${REPO_DIR}/requirements.txt" ]; then
+    DEPLOY_MODE="native-python"
+fi
 if [ "${DEPLOY_MODE}" = "unknown" ]; then
     echo "❌ 无法识别 ${PROJECT_NAME} 的部署模式（未发现 compose 文件或已支持的 native 特征）"
     exit 1
@@ -265,7 +268,89 @@ run_native() {
     esac
 }
 
+# ---------- native 模式（Python：venv + uvicorn/入口脚本）----------
+PY_PORT="${NATIVE_PY_PORT:-8000}"
+[ -f "${REPO_DIR}/.pipeline-port" ] && PY_PORT=$(cat "${REPO_DIR}/.pipeline-port")
+PY_PID_FILE="${PIPELINE_ROOT}/output/${PROJECT_NAME}-native.pid"
+PY_LOG_FILE="${PIPELINE_ROOT}/output/${PROJECT_NAME}-native.log"
+
+np_start() {
+    if lsof -nP -iTCP:${PY_PORT} -sTCP:LISTEN >/dev/null 2>&1; then
+        log "⚠️ 端口 ${PY_PORT} 已被占用（项目有进程锁，禁止重复启动），如需重启请先 stop"
+        exit 1
+    fi
+    [ -d "${REPO_DIR}/.venv" ] || { log "📦 创建 venv（python3 -m venv .venv）"; python3 -m venv "${REPO_DIR}/.venv"; }
+    source "${REPO_DIR}/.venv/bin/activate"
+    if [ ! -f "${REPO_DIR}/.venv/.deps-installed" ]; then
+        log "📦 pip install -r requirements.txt（首次安装，超时 300s）"
+        pip install -q -r "${REPO_DIR}/requirements.txt" 2>&1 | tail -3 | tee -a "${LOG_FILE}"
+        touch "${REPO_DIR}/.venv/.deps-installed"
+    fi
+    cd "${REPO_DIR}"
+    if [ -f "${REPO_DIR}/app.py" ]; then
+        log "▶️ 启动：python3 -m uvicorn app:app --host 0.0.0.0 --port ${PY_PORT}（后台，无 --reload）"
+        nohup python3 -m uvicorn app:app --host 0.0.0.0 --port ${PY_PORT} >> "${PY_LOG_FILE}" 2>&1 &
+    else
+        log "▶️ 启动：python3 main.py（后台）"
+        nohup python3 main.py >> "${PY_LOG_FILE}" 2>&1 &
+    fi
+    echo $! > "${PY_PID_FILE}"
+    sleep 3
+    if kill -0 "$(cat "${PY_PID_FILE}")" 2>/dev/null; then
+        log "✅ 启动完成 PID=$(cat "${PY_PID_FILE}") · 日志 ${PY_LOG_FILE}"
+    else
+        log "❌ 启动失败，查看 ${PY_LOG_FILE}"
+        exit 1
+    fi
+}
+
+np_stop() {
+    if [ -f "${PY_PID_FILE}" ]; then
+        local pid=$(cat "${PY_PID_FILE}")
+        if kill "${pid}" 2>/dev/null; then log "⏹️ 已终止 PID=${pid}"; else log "⚠️ PID=${pid} 进程不存在"; fi
+        rm -f "${PY_PID_FILE}"
+    else
+        log "ℹ️ 无 PID 文件"
+    fi
+    local left=$(lsof -nP -tiTCP:${PY_PORT} -sTCP:LISTEN 2>/dev/null)
+    [ -n "${left}" ] && { log "⚡ 端口 ${PY_PORT} 仍监听（${left}），SIGKILL 强制终止"; echo "${left}" | xargs kill -9 2>/dev/null; sleep 1; }
+    log "✅ 停止完成"
+}
+
+run_native_python() {
+    case "${ACTION}" in
+        start)
+            np_start ;;
+        stop)
+            np_stop ;;
+        restart)
+            np_stop
+            sleep 1
+            np_start ;;
+        build)
+            [ -d "${REPO_DIR}/.venv" ] || python3 -m venv "${REPO_DIR}/.venv"
+            source "${REPO_DIR}/.venv/bin/activate"
+            log "🔨 Python 构建 = 依赖重装：pip install -r requirements.txt"
+            pip install -q -r "${REPO_DIR}/requirements.txt" 2>&1 | tail -3 | tee -a "${LOG_FILE}"
+            touch "${REPO_DIR}/.venv/.deps-installed"
+            log "✅ 构建完成" ;;
+        status)
+            if [ -f "${PY_PID_FILE}" ] && kill -0 "$(cat "${PY_PID_FILE}")" 2>/dev/null; then
+                log "📊 进程存活：PID=$(cat "${PY_PID_FILE}")"
+            else
+                log "📊 进程：未运行（无 PID 或已退出）"
+            fi
+            log "📊 端口 ${PY_PORT}：$(lsof -nP -iTCP:${PY_PORT} -sTCP:LISTEN 2>/dev/null | tail -n +2 | awk '{print $1" pid:"$2}' | head -3 | tr '\n' ' ')"
+            curl -s -o /dev/null -m 5 -w "📊 HTTP 探测：http://127.0.0.1:${PY_PORT} → %{http_code}\n" "http://127.0.0.1:${PY_PORT}" | tee -a "${LOG_FILE}" ;;
+        *)
+            log "❌ 未知动作：${ACTION}（native-python 模式支持 start/stop/restart/build/status）"
+            usage
+            exit 1 ;;
+    esac
+}
+
 case "${DEPLOY_MODE}" in
     docker) run_docker ;;
     native-java-node) run_native ;;
+    native-python) run_native_python ;;
 esac

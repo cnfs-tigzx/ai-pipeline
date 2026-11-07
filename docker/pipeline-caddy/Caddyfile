@@ -1,0 +1,24 @@
+{
+	admin off
+}
+
+http://weknora.localhost:9000 {
+	reverse_proxy host.docker.internal:80
+}
+
+http://mem0.localhost:9000 {
+	reverse_proxy host.docker.internal:3000
+}
+
+http://studio.localhost:9000 {
+	reverse_proxy host.docker.internal:1933
+}
+
+:9000 {
+	encode gzip
+	handle {
+		root * /srv
+		try_files {path} /index.html
+		file_server
+	}
+}

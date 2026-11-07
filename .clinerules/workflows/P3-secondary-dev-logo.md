@@ -51,6 +51,7 @@
    - 登录策略：需登录时注册临时账号（brandtest@{BRAND}.com），验证后清理
    - swagger 容错：页面 401/403 时验证源码层（docs/swagger.json info.title、main.go @title）
 4. 产物：`output/{REPO}-change-log.md` + `output/{REPO}-logo-change-log.md`；report 追加章节 11；task-log 追加
+5. 产物同步（07 §7.4，失败不阻塞记 task-log）：`scripts/ov-sync.sh output/{REPO}-change-log.md viking://resources/{REPO}/sop/ "P3 变更记录归档"`；logo-change-log 同理推 sop/
 
 ## 使用示例
 

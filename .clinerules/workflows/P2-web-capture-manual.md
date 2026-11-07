@@ -24,7 +24,11 @@
 6. **原始素材** → `readme-parse/{REPO}-product-capture.json`（来源 URL、抓取时间、章节化内容）
 7. **产品说明书** → `knowledge/{REPO}-product-manual.md`，固定七章结构：
    ① 产品概述（含 GitHub 项目信息）→ ② 功能模块总览 → ③ 各模块操作步骤 → ④ 界面与字段说明 → ⑤ 使用示例 → ⑥ 常见使用问题 → ⑦ 版本与更新
-8. report 追加章节 9（产品说明书）；追加 `output/task-log.md`
+8. **产物同步**（07 §7.4）：手册 → 双层落位（失败不阻塞流水线，记 task-log）
+   - `scripts/ov-sync.sh knowledge/{REPO}-product-manual.md viking://resources/{REPO}/manuals/ "P2 手册同步"`
+   - `scripts/weknora-sync.sh knowledge/{REPO}-product-manual.md`（业务门户立即可问答）
+   - 如有表格：`scripts/ov-sync.sh knowledge/table-{REPO}.json viking://resources/{REPO}/datasets/ "P2 表格同步"`
+9. report 追加章节 9（产品说明书）；追加 `output/task-log.md`
 
 ## 收尾
 

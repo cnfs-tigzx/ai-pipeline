@@ -14,6 +14,7 @@
 | 04-mcp-control-rule.md | MCP 工具调用、stdio 模式、错误排查 | 全部 |
 | 05-secondary-dev-rule.md | 二次开发、代码标识替换、Logo 替换 | P3 |
 | 06-web-capture-rule.md | 网页抓取、表格抓取、产品说明书生成 | P2 |
+| 07-context-federation-rule.md | 上下文联邦：Mem0/OpenViking/WeKnora 三层职责、检索写入纪律、同步脚本 | 全部 |
 | workflows/ | 五大阶段任务提示词（只写步骤，规则引用编号） | — |
 
 ## 五大阶段路由表（总入口）
@@ -38,6 +39,9 @@
 | scripts/rebuild-deploy.sh | docker 重新构建并发布（改码后） | P1-C、P3 |
 | scripts/git-push.sh | git 仓库 init/sync/pull/status（v2 默认 SSH） | P4 |
 | scripts/mem0-one-key.sh | mem0 服务 status/start/stop | P5 |
+| scripts/ov-sync.sh | 本地文件推送 OpenViking 资产层（viking://resources/） | P2/P3 产物同步（07 §7.4） |
+| scripts/weknora-sync.sh | 文档上传 WeKnora 知识库（业务问答门户） | P2/P3 产物同步（07 §7.4） |
+| scripts/pipeline-services.sh | 三层联邦统一编排：start/stop/restart/status/health（mem0/openviking/weknora/caddy） | 全部（07 §7.4，亦可经 one-key.sh services 调用） |
 
 ---
 

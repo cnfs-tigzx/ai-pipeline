@@ -26,6 +26,10 @@ usage() {
   build     重新构建（docker: compose build / native: 后端 mvn package + 前端 npm run build）
   status    查看服务状态（docker: compose ps / native: 进程存活+端口探测）
 
+联邦编排动作：
+  services [start|stop|restart|status|health] [mem0|openviking|weknora|caddy|all]
+            三层上下文联邦统一编排，转发至 scripts/pipeline-services.sh
+
 示例：
   ./scripts/one-key.sh tigzx-dicom start      指定项目
   ./scripts/one-key.sh start                  使用 last-task.json 中的当前项目
@@ -36,6 +40,10 @@ EOF
 }
 
 # ---------- 参数解析 ----------
+if [ "${1:-}" = "services" ]; then
+    shift
+    exec "${PIPELINE_ROOT}/scripts/pipeline-services.sh" "$@"
+fi
 if [ "$1" = "-h" ] || [ "$1" = "--help" ] || [ "$1" = "help" ]; then usage; exit 0; fi
 
 if [ $# -ge 2 ]; then

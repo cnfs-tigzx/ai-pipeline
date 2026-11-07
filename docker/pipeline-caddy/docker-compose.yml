@@ -1,0 +1,12 @@
+services:
+  pipeline-caddy:
+    image: caddy:2
+    container_name: pipeline-caddy
+    ports:
+      - "9000:9000"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./index.html:/srv/index.html:ro
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped

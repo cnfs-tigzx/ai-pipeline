@@ -31,7 +31,13 @@ elif [ -f "compose.yml" ];then
 fi
 
 if [ -z "${COMPOSE_FILE}" ];then
-    echo "⚠️ 未找到docker compose文件，跳过compose部署" | tee -a "${DEPLOY_LOG}"
+    # native 项目校验：进程 + 端口 + HTTP 探测
+    echo "⚠️ 未找到docker compose文件，按 native 模式校验" | tee -a "${DEPLOY_LOG}"
+    echo "## 1. native 服务状态" | tee -a "${DEPLOY_LOG}"
+    "${PIPELINE_ROOT}/scripts/one-key.sh" "${PROJECT_NAME}" status 2>&1 | tee -a "${DEPLOY_LOG}"
+    echo "## 2. native 提示" | tee -a "${DEPLOY_LOG}"
+    echo "启动：./scripts/one-key.sh ${PROJECT_NAME} start" | tee -a "${DEPLOY_LOG}"
+    echo "停止：./scripts/one-key.sh ${PROJECT_NAME} stop" | tee -a "${DEPLOY_LOG}"
     exit 0
 fi
 

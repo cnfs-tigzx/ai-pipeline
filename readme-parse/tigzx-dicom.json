@@ -1,0 +1,49 @@
+{
+  "repo": "tigzx-dicom",
+  "parsed_at": "2026-11-06",
+  "source": "本地已存在（用户预下载，跳过拉取）",
+  "summary": "TIGZX DICOM 影像工作台：支持二维标注与具备空间信息序列的三维联动，免登录患者/指标影像列表与独立上传记录。",
+  "tech_stack": {
+    "backend": "Java 17 + Spring Boot 3.5.8 + MyBatis-Plus 3.5.15 + dcm4che-core 5.33.0 + mysql-connector-j（连 StarRocks MySQL 协议）+ H2（仅测试）",
+    "frontend": "Vue 3.5.43 + Vite 7 + TypeScript 5.9 + Element Plus 2.14.7 + @cornerstonejs 5.11.6 + vitest"
+  },
+  "dependencies": {
+    "runtime": ["Java 17 (JDK)", "Maven", "Node.js + npm", "StarRocks 4.1.4（唯一数据库，MySQL 兼容协议 9030）"],
+    "storage": "StarRocks 单库 tigzx_dicom：影像索引、导入任务、标注版本（annotation_snapshot）、结构化结果（annotation_node/annotation_node_point）；DICOM 文件仅存磁盘不进库"
+  },
+  "startup_commands": {
+    "backend": "cd backend && mvn spring-boot:run（工作目录必须为 backend，application.yml 按此加载；打包后 java -jar 独立副本绝对路径）",
+    "frontend": "cd frontend && npm ci && npm run dev -- --host 0.0.0.0（vite --host 0.0.0.0 --port 5173 --strictPort，README 示例 --host 192.168.180.1）",
+    "ports": { "backend": "8080 (127.0.0.1)", "frontend": "5173", "starrocks_fe_query": "9030" }
+  },
+  "build_commands": {
+    "backend_test": "mvn -f backend/pom.xml test",
+    "frontend_test": "npm --prefix frontend test",
+    "frontend_build": "npm --prefix frontend run build（vue-tsc --noEmit && vite build）"
+  },
+  "config": {
+    "backend_config": "backend/application.yml（gitignore，唯一运行配置）",
+    "database": "jdbc:mysql://127.0.0.1:9030/tigzx_dicom root/Local12345#（9030 为 StarRocks FE MySQL 协议端口，非 MySQL）",
+    "dicom_paths": "dicom.source-root / dicom.local-root（原指向 /Users/sunmingze/...，需改本机路径）",
+    "external_service": "research.core-base-url: http://127.0.0.1:7120（研究核心服务，本机未部署，待确认是否可选）",
+    "frontend_env": "frontend/.env.local + .env.development.local → DICOM_API_TARGET=http://127.0.0.1:8080",
+    "db_init": "README 引用 docs/sql/starrocks-business.sql + docs/sql/starrocks.sql，docs/ 目录未同步到本地，建表 SQL 待用户提供"
+  },
+  "apis": "免登录上传/列表接口：新上传必须传 projectId+patientId（可选 indicatorId）；带 imageId 打开对应影像，不带展示列表+手动上传；前端 /api 代理至 127.0.0.1:8080。详细接口文档 docs/api.md 缺失",
+  "known_pitfalls": [
+    "进程锁：相同工作目录的进程锁阻止重复启动，禁止部署多个后台",
+    "9030 是 StarRocks FE MySQL 协议端口，保留 JDBC 驱动但不是 MySQL",
+    "新环境需先在 StarRocks 手动执行业务库+结果库建表脚本（当前缺失）",
+    "重复 DICOM UID 不会合并不同上传记录或校验患者归属",
+    "文件保存在 dicom.source-root/.uploads 下",
+    "旧 mysql*.sql 脚本仅为历史迁移参考，不能用于当前 StarRocks",
+    "当前不支持动态影像",
+    "application.yml 内 dicom 路径原为原作者用户目录，本机不存在，必须调整"
+  ],
+  "deploy_mode": "native",
+  "deploy_mode_reason": "无 Dockerfile/docker-compose.yml；backend 为 Maven 项目、frontend 为 npm 项目",
+  "access_urls": {
+    "frontend": "http://127.0.0.1:5173/（示例工作台 http://192.168.180.1:5173/?projectId=100091&patientId=100078）",
+    "backend": "http://127.0.0.1:8080"
+  }
+}

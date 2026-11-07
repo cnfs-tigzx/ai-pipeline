@@ -1,0 +1,93 @@
+{
+  "repo": "mirobody",
+  "capture_at": "2026-11-05T00:37:00+08:00",
+  "sources": [
+    "README.zh-CN.md",
+    "docs/walkthrough.zh-CN.md",
+    "docs/quickstart.zh-CN.md",
+    "Playwright 抓取 http://127.0.0.1:18060 (login/setup/home/data/ask/care-circle/profile)"
+  ],
+  "app_pages_captured": {
+    "login": {
+      "url": "http://127.0.0.1:18060/login",
+      "tabs": ["登录(邮箱+密码)", "注册", "邮箱验证码"],
+      "demo_hint": "演示账号：you@mirobody.ai，验证码 111111（一键填入按钮）",
+      "language_switch": ["English", "简体中文", "繁體中文", "日本語"],
+      "logo": "img Mirobody（frontend/mirobody.svg）"
+    },
+    "setup": {
+      "url": "http://127.0.0.1:18060/setup",
+      "title": "首次设置 - 选择由谁来处理你的健康数据",
+      "options": {
+        "使用模型服务": "上手最快，用一个 API key 接入 OpenRouter/OpenAI/Gemini/DeepSeek 等，几秒出答案，文档发送给服务商",
+        "100%在本机运行": "最私密，llama.cpp 本地运行两个开源模型，无需 key/账号，CPU 首答几分钟，需 16G 内存"
+      },
+      "providers": ["OpenRouter(claude-sonnet-5.5)", "Alibaba Qwen(qwen3.8-flash)", "Google Gemini(gemini-3.8-flash)", "OpenAI(gpt-6-sol)", "DeepSeek(deepseek-flash)", "Anthropic(claude-sonnet-5-5)"],
+      "setup_token": "SETUP_TOKEN in .env，deploy.sh 打印的链接携带"
+    },
+    "home": {
+      "url": "http://127.0.0.1:18060/",
+      "sidebar": {
+        "工作区": ["数据", "指标", "询问"],
+        "管理": ["档案", "关爱圈"],
+        "用户": "You (demo) you@mirobody.ai"
+      },
+      "main_tabs": ["指标", "明细", "用药"],
+      "指标_table": {
+        "columns": ["指标", "最新值", "记录数", "最近记录", "编码"],
+        "rows": [
+          {"指标": "Body weight", "最新值": "69.2kg", "记录数": 53, "编码": "LOINC 29463-7"},
+          {"指标": "Cholesterol", "最新值": "4.6mmol/L", "记录数": 1, "编码": "LOINC 14647-2"},
+          {"指标": "Diastolic blood pressure", "最新值": "71mmHg", "记录数": 14, "编码": "LOINC 8462-4"},
+          {"指标": "Fasting glucose", "最新值": "5.1mmol/L", "记录数": 1, "编码": "LOINC 14771-0"},
+          {"指标": "Heart rate --resting", "最新值": "56count/min", "记录数": 365, "编码": "LOINC 40443-4"},
+          {"指标": "Hemoglobin A1c", "最新值": "5.3%", "记录数": 1, "编码": "LOINC 4548-4"},
+          {"指标": "Number of steps in 24h", "最新值": "5349count", "记录数": 365, "编码": "LOINC 41950-7"},
+          {"指标": "Systolic blood pressure", "最新值": "112mmHg", "记录数": 14, "编码": "LOINC 8480-6"}
+        ],
+        "summary": "8 项指标 · 814 条记录"
+      },
+      "guided_tour": "7步引导：1.欢迎使用 → 2.数据 → 3.指标 → 4.询问 → 5.档案 → 6.关爱圈 → 7.你的账号"
+    },
+    "data": {
+      "url": "http://127.0.0.1:18060/data",
+      "tabs": ["记录", "文件", "基因数据", "连接数据源"],
+      "journal_input": "写什么都行：我头疼，血压150/95，每天早晚吃二甲双胍500mg，午饭吃了面",
+      "journal_description": "用日常语言写，症状对上 ICPC-3，数值对上 LOINC，用药加入用药清单，每条保留原话",
+      "upload_formats": "PDF/JPG/CSV/XLSX 等 23 种文件类型"
+    },
+    "ask": {
+      "url": "http://127.0.0.1:18060/ask",
+      "features": ["历史对话列表", "新对话按钮", "模型选择", "帮他问快捷按钮", "聊天输入框"],
+      "placeholder": "问我任何关于您健康数据的问题"
+    },
+    "care_circle": {
+      "url": "http://127.0.0.1:18060/care-circle",
+      "sections": ["本人(基本信息)", "成员(Mom demo)", "谁能看到我的记录(权限控制)"],
+      "sharing_levels": ["可以查看和管理", "只能查看", "不共享"],
+      "add_member": "添加成员按钮"
+    },
+    "profile": {
+      "url": "http://127.0.0.1:18060/profile",
+      "content": "基本信息（姓名/出生日期等，年龄由出生日期推算，回答健康问题时用到）"
+    }
+  },
+  "docs_extracted": {
+    "walkthrough": {
+      "5_scenarios": [
+        "1.进门：登录后看到两份记录(自己的+mom共享只读)，隔离可见",
+        "2.收集：上传 PDF/JPG/CSV/XLSX 到数据页，文件原样保存可追溯",
+        "3.标准化：模型读文档后分析物变指标，每条带 LOINC 编码链回原文件，离线词表确定不猜测",
+        "4.智能体：问胆固醇变化，agent 查全部相关文件(含不同写法)画趋势线，点数字看来源",
+        "5.写感受：一句话拆分为编码症状+编码读数+用药清单，「没发烧」不记为发烧"
+      ],
+      "care_circle_promises": ["必须本人接受才算加入", "健康数据默认不开除非允许", "你的开关在你自己的行上", "每个成员各管各的"]
+    },
+    "quickstart": {
+      "library_usage": "pip install mirobody → resolve('血红蛋白').loinc == '718-7'，离线无需 Key",
+      "apple_health": "mirobody import apple ~/Downloads/export.zip",
+      "mcp_integration": "uvx --python 3.12 mirobody mcp（stdio，离线词表工具）",
+      "doctor_check": "docker compose exec mirobody mirobody doctor --probe"
+    }
+  }
+}

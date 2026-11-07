@@ -23,7 +23,17 @@ elif [ -f "compose.yml" ];then
 fi
 
 if [ -z "${COMPOSE_FILE}" ];then
-    echo "❌ 未找到compose配置文件"
+    # native 项目（Java/Node 等）无 compose：走 one-key.sh 重建流程
+    if [ -d "backend" ] && [ -d "frontend" ];then
+        echo "ℹ️ ${PROJECT_NAME} 为 native 项目（无 compose），改用 one-key.sh 重启构建" | tee -a "${CHANGE_LOG}"
+        echo "## 1. native 重建（one-key.sh restart）" >> "${CHANGE_LOG}"
+        "${PIPELINE_ROOT}/scripts/one-key.sh" "${PROJECT_NAME}" restart >> "${CHANGE_LOG}" 2>&1 || true
+        echo "## 2. 服务状态" >> "${CHANGE_LOG}"
+        "${PIPELINE_ROOT}/scripts/one-key.sh" "${PROJECT_NAME}" status >> "${CHANGE_LOG}" 2>&1 || true
+        echo "✅ native 构建发布完成，变更日志：${CHANGE_LOG}"
+        exit 0
+    fi
+    echo "❌ 未找到compose配置文件，且非已支持的 native 结构"
     exit 1
 fi
 

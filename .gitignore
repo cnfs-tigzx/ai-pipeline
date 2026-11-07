@@ -17,6 +17,21 @@ docker-data/
 .vscode/
 .idea/
 
+# ========== 本地密钥/凭据（严禁上传）==========
+火山方舟模型API
+local-secrets.md
+
+# ========== 本地备份目录 ==========
+.auto-bak/
+**/.auto-bak/
+
+# ========== 预检缓存与临时报告 ==========
+.preflight-cache.ts
+preflight-report.md
+
+# ========== 下游项目数据/测试数据 ==========
+data/
+
 # 临时文件
 *.tmp
 *.bak

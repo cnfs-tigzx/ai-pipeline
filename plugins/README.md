@@ -56,5 +56,6 @@ YAML 写法遵守 docs/02 §五（_yamlmini 子集）。
 
 ## 五、列表页
 
-`plugins-registry.html`（工程根目录，纯静态零服务）：由 `scripts/gen-registry.py --html` 生成，
-展示插件名称、启动命令环境、功能描述、授权中心、registry 版本。
+- **三中心门户（主入口）**：`plugins/IndexPage/index.html`（纯静态零服务），由 `scripts/indexpage.py build` 生成：
+  插件名称、启动命令环境、功能描述、授权中心三开关 + MCP 服务盘点；动态授权走决策闭环（见其 README）
+- 旧版静态列表 `plugins-registry.html`（`gen-registry.py --html`）保留兼容

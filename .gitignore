@@ -33,6 +33,11 @@ preflight-report.md
 data/
 db/
 
+# ========== IndexPage 决策时效文件（apply 后归档，不入库）==========
+plugins/IndexPage/decisions.json
+plugins/IndexPage/decisions-applied-*.json
+.playwright-mcp/
+
 # 临时文件
 *.tmp
 *.bak

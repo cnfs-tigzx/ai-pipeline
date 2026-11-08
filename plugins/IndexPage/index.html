@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>三中心门户 · 插件与服务</title>
+<style>
+:root{--bg:#f6f8fa;--card:#fff;--ink:#1f2328;--mut:#656d76;--line:#d8dee4;
+--eng:#1a7f37;--data:#0969da;--sol:#8250df;--warn:#9a6700;--danger:#cf222e}
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,"PingFang SC",system-ui,sans-serif;background:var(--bg);color:var(--ink)}
+header{position:sticky;top:0;z-index:9;background:#ffffffee;backdrop-filter:blur(6px);
+border-bottom:1px solid var(--line);padding:14px 22px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+header h1{font-size:17px;margin:0}
+header .meta{color:var(--mut);font-size:12px}
+.cbadge{font-size:11px;border-radius:99px;padding:3px 10px;font-weight:600}
+.c-eng{background:#dafbe1;color:var(--eng)}.c-data{background:#ddf4ff;color:var(--data)}
+.c-sol{background:#fbefff;color:var(--sol)}
+main{max-width:1080px;margin:0 auto;padding:18px 22px 120px}
+.tabs{display:flex;gap:8px;margin:6px 0 16px}
+.tabs button{border:1px solid var(--line);background:#fff;border-radius:8px;padding:7px 14px;
+cursor:pointer;font-size:13px}
+.tabs button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px;
+display:flex;flex-direction:column;gap:8px}
+.card h3{margin:0;font-size:15px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.tag{font-size:10px;border-radius:5px;padding:2px 7px;font-weight:700;letter-spacing:.4px}
+.t-docker{background:#ddf4ff;color:var(--data)}.t-native{background:#dafbe1;color:var(--eng)}
+.t-mcp{background:#fff1e5;color:#bc4c00}.t-mcphttp{background:#fff1e5;color:#bc4c00}
+.t-off{background:#ffebe9;color:var(--danger)}
+.desc{color:var(--mut);font-size:12.5px;line-height:1.55}
+.kv{font-size:11.5px;color:var(--mut);word-break:break-all}
+.kv b{color:var(--ink);font-weight:600}
+details{font-size:12px}.details summary{cursor:pointer;color:var(--data)}
+pre{background:#f6f8fa;border:1px solid var(--line);border-radius:8px;padding:8px 10px;
+font-size:11px;overflow-x:auto;margin:6px 0 0}
+.legacy{background:#fff8c5;border:1px solid #d4a72c66;color:var(--warn);font-size:11.5px;
+border-radius:8px;padding:6px 9px}
+.switches{margin-top:auto;border-top:1px dashed var(--line);padding-top:10px;
+display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.switches .lbl{font-size:11px;color:var(--mut)}
+.sw{display:inline-flex;align-items:center;gap:5px;cursor:pointer;user-select:none;
+font-size:12px;font-weight:600;border-radius:99px;padding:4px 10px;border:1.5px solid var(--line)}
+.sw input{display:none}
+.sw.eng{color:var(--eng)}.sw.data{color:var(--data)}.sw.sol{color:var(--sol)}
+.sw.on.eng{background:var(--eng);color:#fff;border-color:var(--eng)}
+.sw.on.data{background:var(--data);color:#fff;border-color:var(--data)}
+.sw.on.sol{background:var(--sol);color:#fff;border-color:var(--sol)}
+.sw.pend{outline:2px dashed #d4a72c;outline-offset:1px}
+.panel{position:fixed;bottom:0;left:0;right:0;background:#ffffffee;backdrop-filter:blur(6px);
+border-top:1px solid var(--line);padding:12px 22px;display:none;gap:12px;align-items:center;flex-wrap:wrap;z-index:9}
+.panel.show{display:flex}
+.panel .list{font-size:12.5px;color:var(--mut);flex:1;min-width:260px}
+.panel button{border:0;border-radius:8px;padding:9px 16px;font-weight:700;cursor:pointer}
+#export{background:var(--data);color:#fff}
+#clearp{background:#fff;border:1px solid var(--line)!important;color:var(--ink)}
+.empty{grid-column:1/-1;background:var(--card);border:1px dashed var(--line);border-radius:12px;
+padding:22px;color:var(--mut);font-size:13px;line-height:1.7;text-align:center}
+footer{max-width:1080px;margin:0 auto;padding:0 22px 30px;color:var(--mut);font-size:12px;line-height:1.8}
+</style>
+</head>
+<body>
+<header>
+  <h1>三中心门户 · 插件与 MCP 服务</h1>
+  <span class="meta">registry v<span id="rv"></span> · 生成于 <span id="gt"></span></span>
+  <span id="cbadges" style="display:flex;gap:6px"></span>
+</header>
+<main>
+  <div class="tabs" id="tabs"></div>
+  <div class="grid" id="grid"></div>
+</main>
+<footer>
+  决策闭环：切换开关 → 底部「导出决策」下载 decisions.json → 放到 plugins/IndexPage/decisions.json →
+  终端执行 <code>python3 scripts/indexpage.py apply</code> → 本页重新生成后生效。
+  MCP 类授权位于 Cline 扩展设置（本页仅导出人工操作清单）。虚线描边的开关为待应用变更。
+</footer>
+<div class="panel" id="panel">
+  <div class="list" id="plist"></div>
+  <button id="export">导出决策</button>
+  <button id="clearp">清空</button>
+</div>
+<script>
+const INVENTORY = {
+  "generated_at": "2026-11-09T01:45:00+08:00",
+  "registry_version": 6,
+  "centers": [
+    {
+      "id": "eng",
+      "name": "开发中心",
+      "core": "Cline act + GLM"
+    },
+    {
+      "id": "data",
+      "name": "数策中心",
+      "core": "Cline + deepseek"
+    },
+    {
+      "id": "solution",
+      "name": "方案中心",
+      "core": "Cline plan + doubao"
+    }
+  ],
+  "docker": [],
+  "mcp": [
+    {
+      "name": "mem0",
+      "kind": "stdio",
+      "endpoint": "python3 /Users/tigzx/workspace/ai-pipeline/repos/mem0/integrations/codex-plugin/core/mcp_server.py",
+      "legacy": true,
+      "note": "联邦遗产（Mem0）— 第一阶段停用，恢复见 docs/01",
+      "status": "legacy-disabled",
+      "config_path": "Library/Application Support/Code/User/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json"
+    },
+    {
+      "name": "openviking",
+      "kind": "streamableHttp",
+      "endpoint": "http://localhost:1933/mcp",
+      "legacy": true,
+      "note": "联邦遗产（OpenViking）— 第一阶段停用，恢复见 docs/01",
+      "status": "legacy-disabled",
+      "config_path": "Library/Application Support/Code/User/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json"
+    },
+    {
+      "name": "weknora",
+      "kind": "streamableHttp",
+      "endpoint": "http://localhost:8080/mcp/4fb7fad2-d491-48a8-b75b-e27a68b84db4",
+      "legacy": true,
+      "note": "联邦遗产（WeKnora）— 第一阶段停用，恢复见 docs/01",
+      "status": "legacy-disabled",
+      "config_path": "Library/Application Support/Code/User/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json"
+    },
+    {
+      "name": "tabclaw",
+      "kind": "stdio",
+      "endpoint": "python3 /Users/tigzx/workspace/ai-pipeline/repos/TabClaw/integrations/tabclaw-mcp/mcp_server.py",
+      "legacy": false,
+      "note": "",
+      "status": "active",
+      "config_path": "Library/Application Support/Code/User/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json"
+    }
+  ],
+  "mcp_config_src": "Library/Application Support/Code/User/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json",
+  "plugins": [
+    {
+      "slug": "tabclaw",
+      "name": "TabClaw 表格分析智能体",
+      "description": "交互式表格分析 AI 智能体：拖入 CSV/Excel，自然语言下达需求，先出计划、并行多智能体分析、记住用户偏好、可从交互中提炼可复用技能",
+      "version": "0.1.0",
+      "runtime": "native",
+      "artifact_path": "repos/TabClaw",
+      "entry": "uvicorn app:app --host 0.0.0.0 --port 8000",
+      "health": "http://localhost:8000",
+      "image_digest": null,
+      "grants": [
+        "eng",
+        "data"
+      ],
+      "env_plain": {
+        "workdir": "repos/TabClaw",
+        "config_files": "setting.txt.example -> setting.txt",
+        "config_note": "API_KEY/BASE_URL/DEFAULT_MODEL 三项，BASE_URL 为方舟 OpenAI 兼容端点",
+        "setup": "python3 -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt",
+        "start": "source .venv/bin/activate && uvicorn app:app --host 0.0.0.0 --port 8000",
+        "health": "GET http://localhost:8000 -> 200",
+        "port": 8000,
+        "notes": "numpy 必须 <2；端口 8000 勿与 mkdocs 预览同开"
+      }
+    }
+  ],
+  "note_docker": "docker 产物由开发中心 W6-B 登记（plugins/packages/<slug>/package.json 的 image_digest）后自动出现在此处。",
+  "tools_view": [
+    {
+      "name": "tabclaw__analyze_table",
+      "slug": "tabclaw",
+      "description": "对表格数据（CSV/Excel/URL）做自然语言分析，返回结论与过程",
+      "class": "db_read",
+      "risk": "medium"
+    }
+  ]
+};
+const CENTERS = INVENTORY.centers;
+const PENDING = JSON.parse(localStorage.getItem('indexpage-pending') || '{}');
+
+function key(kind, slug, c){ return kind + '|' + slug + '|' + c; }
+function granted(kind, item, c){
+  return kind !== 'mcp' && item.grants.includes(c);   // MCP 授权在 Cline 设置，页面不预置
+}
+function effOn(kind, slug, item, c){
+  const k = key(kind, slug, c);
+  if (PENDING[k]) return PENDING[k].action === 'grant';
+  return granted(kind, item, c);
+}
+function badge(txt, cls){ return '<span class="tag ' + cls + '">' + txt + '</span>'; }
+
+function switches(kind, item){
+  return '<div class="switches"><span class="lbl">三中心授权：</span>' +
+    CENTERS.map(c => {
+      const on = effOn(kind, item.slug, item, c.id);
+      const pend = PENDING[key(kind, item.slug, c.id)];
+      return '<label class="sw ' + c.id + (on ? ' on' : '') + (pend ? ' pend' : '') + '">' +
+        '<input type="checkbox" ' + (on ? 'checked' : '') +
+        ' onchange="toggle(\'' + kind + '\',\'' + item.slug + '\',\'' + c.id + '\')">' +
+        c.name + (pend ? '（待应用）' : '') + '</label>';
+    }).join('') + '</div>';
+}
+
+function cardDocker(it){
+  return '<div class="card"><h3>' + it.name + badge('DOCKER', 't-docker') + '</h3>' +
+    '<div class="desc">' + (it.description || '') + '</div>' +
+    '<div class="kv"><b>产物</b>：' + (it.artifact_path || '-') + '</div>' +
+    '<div class="kv"><b>镜像摘要</b>：' + (it.image_digest ? String(it.image_digest).slice(0, 26) + '…' : '未登记（W6-B）') + '</div>' +
+    '<div class="kv"><b>健康探测</b>：' + (it.health || '-') + '</div>' +
+    switches('docker', it) + '</div>';
+}
+
+function cardPlugin(it){
+  const tools = (INVENTORY.tools_view || []).filter(t => t.slug === it.slug);
+  return '<div class="card"><h3>' + it.name + badge('插件·' + (it.runtime || 'native').toUpperCase(), 't-native') + '</h3>' +
+    '<div class="desc">' + (it.description || '') + '</div>' +
+    '<div class="kv"><b>版本</b>：' + (it.version || '-') + ' · <b>产物</b>：' + (it.artifact_path || '-') + '</div>' +
+    (tools.length ? '<details><summary>工具清单（' + tools.length + '）</summary>' +
+      '<pre>' + tools.map(t => t.name + '  [' + (t.class || '-') + '/' + (t.risk || '-') + ']  ' + t.description).join('\n') + '</pre></details>' : '') +
+    '<details><summary>启动命令环境</summary><pre>' + JSON.stringify(it.env_plain || {}, null, 1) + '</pre></details>' +
+    switches('plugin', it) + '</div>';
+}
+
+function cardMCP(it){
+  const cls = it.kind === 'streamableHttp' ? 't-mcphttp' : 't-mcp';
+  return '<div class="card"><h3>' + it.name + badge(it.kind.toUpperCase(), cls) +
+    (it.legacy ? badge('已停用', 't-off') : '') + '</h3>' +
+    (it.legacy ? '<div class="legacy">⚠ ' + it.note + '</div>' : '') +
+    '<div class="kv"><b>端点</b>：' + (it.endpoint || '-') + '</div>' +
+    '<div class="kv"><b>配置位置</b>：' + (it.config_path || '-') + '</div>' +
+    '<div class="kv">MCP 授权在 Cline 扩展设置中管理；此开关导出的是给维护者的启用/停用建议清单。</div>' +
+    switches('mcp', it) + '</div>';
+}
+</script>
+<script>
+const TABS = [
+  {id:'all',   name:'全部'},
+  {id:'docker',name:'Docker 功能'},
+  {id:'mcp',   name:'MCP 服务'},
+  {id:'plugin',name:'插件'},
+];
+let TAB = 'all';
+
+function render(){
+  document.getElementById('rv').textContent = INVENTORY.registry_version;
+  document.getElementById('gt').textContent = INVENTORY.generated_at;
+  document.getElementById('cbadges').innerHTML = CENTERS.map(c =>
+    '<span class="cbadge c-' + c.id + '">' + c.name + ' · ' + c.core + '</span>').join('');
+  document.getElementById('tabs').innerHTML = TABS.map(t =>
+    '<button class="' + (TAB === t.id ? 'on' : '') + '" onclick="setTab(\'' + t.id + '\')">' +
+    t.name + '（' + count(t.id) + '）</button>').join('');
+  let html = '';
+  if (TAB === 'all' || TAB === 'docker'){
+    html += INVENTORY.docker.length
+      ? INVENTORY.docker.map(cardDocker).join('')
+      : (TAB === 'docker' ? '<div class="empty">暂无已登记的 Docker 产物。<br>' + INVENTORY.note_docker + '</div>' : '');
+  }
+  if (TAB === 'all' || TAB === 'mcp'){
+    html += INVENTORY.mcp.map(cardMCP).join('');
+    if (!INVENTORY.mcp.length && TAB === 'mcp')
+      html += '<div class="empty">未读取到 MCP 配置</div>';
+  }
+  if (TAB === 'all' || TAB === 'plugin'){
+    html += INVENTORY.plugins.length
+      ? INVENTORY.plugins.map(cardPlugin).join('')
+      : (TAB === 'plugin' ? '<div class="empty">暂无已上架插件</div>' : '');
+  }
+  if (TAB === 'all' && !html)
+    html = '<div class="empty">没有任何可展示的插件/服务</div>';
+  document.getElementById('grid').innerHTML = html;
+  renderPanel();
+}
+</script>
+<script>
+function count(tab){
+  if (tab === 'docker') return INVENTORY.docker.length;
+  if (tab === 'mcp') return INVENTORY.mcp.length;
+  if (tab === 'plugin') return INVENTORY.plugins.length;
+  return INVENTORY.docker.length + INVENTORY.mcp.length + INVENTORY.plugins.length;
+}
+function setTab(t){ TAB = t; render(); }
+
+function toggle(kind, slug, c){
+  const k = key(kind, slug, c);
+  const item = (kind === 'docker' ? INVENTORY.docker : kind === 'mcp' ? INVENTORY.mcp : INVENTORY.plugins)
+    .find(x => x.slug === slug);
+  const nowOn = effOn(kind, slug, item, c);
+  if (PENDING[k]) delete PENDING[k];
+  else PENDING[k] = {kind, slug, center: c, action: nowOn ? 'revoke' : 'grant', at: new Date().toISOString()};
+  localStorage.setItem('indexpage-pending', JSON.stringify(PENDING));
+  render();
+}
+
+function renderPanel(){
+  const ks = Object.keys(PENDING);
+  document.getElementById('panel').className = 'panel' + (ks.length ? ' show' : '');
+  document.getElementById('plist').innerHTML = ks.length
+    ? '待应用变更：' + ks.map(k => PENDING[k].slug + ' → ' + PENDING[k].center +
+        (PENDING[k].action === 'grant' ? ' 授权' : ' 移除')).join('；')
+    : '';
+}
+
+document.getElementById('export').onclick = function(){
+  const decisions = Object.values(PENDING);
+  const blob = new Blob([JSON.stringify({exported_at: new Date().toISOString(),
+    inventory_version: INVENTORY.registry_version, decisions}, null, 2)], {type: 'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'decisions.json';
+  a.click();
+};
+document.getElementById('clearp').onclick = function(){
+  localStorage.removeItem('indexpage-pending');
+  for (const k of Object.keys(PENDING)) delete PENDING[k];
+  render();
+};
+
+// 对齐：pending 期望状态已与 inventory 授权一致（apply 后重新生成）→ 自动清除；
+// 条目不存在 → 清除。MCP 类 grant 保留（需人工在 Cline 设置操作）。
+(function syncPending(){
+  let dirty = false;
+  for (const k of Object.keys(PENDING)){
+    const p = PENDING[k];
+    const item = (p.kind === 'docker' ? INVENTORY.docker :
+                  p.kind === 'mcp' ? INVENTORY.mcp : INVENTORY.plugins)
+      .find(x => x.slug === p.slug);
+    if (!item){ delete PENDING[k]; dirty = true; continue; }
+    const nowOn = p.kind === 'mcp' ? false : item.grants.includes(p.center);
+    if ((p.action === 'grant') === nowOn){ delete PENDING[k]; dirty = true; }
+  }
+  if (dirty) localStorage.setItem('indexpage-pending', JSON.stringify(PENDING));
+})();
+render();
+</script>
+</body>
+</html>

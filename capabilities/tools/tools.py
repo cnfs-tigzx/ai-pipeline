@@ -119,7 +119,14 @@ def bump_version():
 
 
 def regen_registry():
-    """重建 registry（调 scripts/gen-registry.py --html），flow 节点用"""
-    r = subprocess.run([sys.executable, os.path.join(cm.ROOT, 'scripts', 'gen-registry.py'), '--html'],
-                       capture_output=True, text=True, timeout=60)
-    return {'ok': r.returncode == 0, 'stdout': r.stdout.strip(), 'stderr': r.stderr.strip()[-400:]}
+    """重建 registry + 三中心门户页（flow 节点用）"""
+    ok_all = True
+    outs = []
+    for script in ('gen-registry.py', 'indexpage.py'):
+        args = [sys.executable, os.path.join(cm.ROOT, 'scripts', script)]
+        if script == 'indexpage.py':
+            args.append('build')
+        r = subprocess.run(args, capture_output=True, text=True, timeout=60)
+        ok_all = ok_all and r.returncode == 0
+        outs.append(r.stdout.strip() or r.stderr.strip()[-300:])
+    return {'ok': ok_all, 'stdout': '\n'.join(outs)}

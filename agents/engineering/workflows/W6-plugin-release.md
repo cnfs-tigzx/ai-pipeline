@@ -24,7 +24,8 @@
 ## C. registry 生成与列表页刷新
 
 1. 执行 `python3 scripts/gen-registry.py` → 重建 `config/tools.registry.json` 并版本 +1
-2. 执行 `python3 scripts/gen-registry.py --html` → 刷新 `plugins-registry.html`（插件名称/启动环境/功能描述/授权中心）
+2. 执行 `python3 scripts/indexpage.py build` → 生成三中心门户页 `plugins/IndexPage/index.html`
+   （插件名称/启动命令环境/功能描述/三中心授权开关；动态授权走页面决策闭环，见该目录 README）
 
 ## D. 授权与安装（唯一确认点）⚠️
 

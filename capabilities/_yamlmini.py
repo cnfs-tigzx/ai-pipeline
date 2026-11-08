@@ -78,18 +78,26 @@ def parse(text):
             pending = None
             if indent <= p_ind:
                 if content == '[]':
-                    p_parent[p_key] = []
+                    lst = []
+                    p_parent[p_key] = lst
+                    stack.append((p_ind, lst))
                     continue
                 if content == '{}':
-                    p_parent[p_key] = {}
+                    d = {}
+                    p_parent[p_key] = d
+                    stack.append((p_ind, d))
                     continue
                 p_parent[p_key] = None
             else:
                 if content == '[]':
-                    p_parent[p_key] = []
+                    lst = []
+                    p_parent[p_key] = lst
+                    stack.append((p_ind, lst))
                     continue
                 if content == '{}':
-                    p_parent[p_key] = {}
+                    d = {}
+                    p_parent[p_key] = d
+                    stack.append((p_ind, d))
                     continue
                 if content.startswith('- '):
                     lst = []
@@ -135,9 +143,13 @@ def parse(text):
             if v == '':
                 pending = (indent, k, container)
             elif v == '[]':
-                container[k] = []
+                lst = []
+                container[k] = lst
+                stack.append((indent, lst))
             elif v == '{}':
-                container[k] = {}
+                d = {}
+                container[k] = d
+                stack.append((indent, d))
             else:
                 container[k] = _parse_scalar(v)
 

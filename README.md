@@ -22,7 +22,7 @@
 | capabilities/ | 十个能力模块（llm/memory/assets/tools/trace/scrape/vcs/runtime/db/mailbox）+ _yamlmini + selftest |
 | orchestration/ | runner.py（DAG/断点/卡点/重试）+ flows/（三条示例流程） |
 | agents/ | 三中心本体：README + rules/ + workflows/（Cline 加载执行） |
-| plugins/ | Plugin Hub：README（清单规范/生命周期）· policy.yaml（授权矩阵）· manifests/ · packages/ |
+| plugins/ | Plugin Hub：README（清单规范/生命周期）· policy.yaml（授权矩阵）· manifests/ · packages/ · IndexPage/（三中心门户页） |
 | plugins-registry.html | 插件列表页（纯静态，gen-registry.py 刷新） |
 | data/ db/ repos/ | 运行期落盘 / SQLite / 下游工作区（均 gitignored） |
 | archive/ | 联邦遗产（Mem0/OpenViking/WeKnora 规则与脚本）与历史评估 |

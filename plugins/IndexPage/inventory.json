@@ -1,0 +1,98 @@
+{
+  "generated_at": "2026-11-09T01:45:00+08:00",
+  "registry_version": 6,
+  "centers": [
+    {
+      "id": "eng",
+      "name": "开发中心",
+      "core": "Cline act + GLM"
+    },
+    {
+      "id": "data",
+      "name": "数策中心",
+      "core": "Cline + deepseek"
+    },
+    {
+      "id": "solution",
+      "name": "方案中心",
+      "core": "Cline plan + doubao"
+    }
+  ],
+  "docker": [],
+  "mcp": [
+    {
+      "name": "mem0",
+      "kind": "stdio",
+      "endpoint": "python3 /Users/tigzx/workspace/ai-pipeline/repos/mem0/integrations/codex-plugin/core/mcp_server.py",
+      "legacy": true,
+      "note": "联邦遗产（Mem0）— 第一阶段停用，恢复见 docs/01",
+      "status": "legacy-disabled",
+      "config_path": "Library/Application Support/Code/User/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json"
+    },
+    {
+      "name": "openviking",
+      "kind": "streamableHttp",
+      "endpoint": "http://localhost:1933/mcp",
+      "legacy": true,
+      "note": "联邦遗产（OpenViking）— 第一阶段停用，恢复见 docs/01",
+      "status": "legacy-disabled",
+      "config_path": "Library/Application Support/Code/User/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json"
+    },
+    {
+      "name": "weknora",
+      "kind": "streamableHttp",
+      "endpoint": "http://localhost:8080/mcp/4fb7fad2-d491-48a8-b75b-e27a68b84db4",
+      "legacy": true,
+      "note": "联邦遗产（WeKnora）— 第一阶段停用，恢复见 docs/01",
+      "status": "legacy-disabled",
+      "config_path": "Library/Application Support/Code/User/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json"
+    },
+    {
+      "name": "tabclaw",
+      "kind": "stdio",
+      "endpoint": "python3 /Users/tigzx/workspace/ai-pipeline/repos/TabClaw/integrations/tabclaw-mcp/mcp_server.py",
+      "legacy": false,
+      "note": "",
+      "status": "active",
+      "config_path": "Library/Application Support/Code/User/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json"
+    }
+  ],
+  "mcp_config_src": "Library/Application Support/Code/User/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json",
+  "plugins": [
+    {
+      "slug": "tabclaw",
+      "name": "TabClaw 表格分析智能体",
+      "description": "交互式表格分析 AI 智能体：拖入 CSV/Excel，自然语言下达需求，先出计划、并行多智能体分析、记住用户偏好、可从交互中提炼可复用技能",
+      "version": "0.1.0",
+      "runtime": "native",
+      "artifact_path": "repos/TabClaw",
+      "entry": "uvicorn app:app --host 0.0.0.0 --port 8000",
+      "health": "http://localhost:8000",
+      "image_digest": null,
+      "grants": [
+        "eng",
+        "data"
+      ],
+      "env_plain": {
+        "workdir": "repos/TabClaw",
+        "config_files": "setting.txt.example -> setting.txt",
+        "config_note": "API_KEY/BASE_URL/DEFAULT_MODEL 三项，BASE_URL 为方舟 OpenAI 兼容端点",
+        "setup": "python3 -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt",
+        "start": "source .venv/bin/activate && uvicorn app:app --host 0.0.0.0 --port 8000",
+        "health": "GET http://localhost:8000 -> 200",
+        "port": 8000,
+        "notes": "numpy 必须 <2；端口 8000 勿与 mkdocs 预览同开"
+      }
+    }
+  ],
+  "note_docker": "docker 产物由开发中心 W6-B 登记（plugins/packages/<slug>/package.json 的 image_digest）后自动出现在此处。",
+  "tools_view": [
+    {
+      "name": "tabclaw__analyze_table",
+      "slug": "tabclaw",
+      "description": "对表格数据（CSV/Excel/URL）做自然语言分析，返回结论与过程",
+      "class": "db_read",
+      "risk": "medium"
+    }
+  ]
+}

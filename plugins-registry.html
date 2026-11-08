@@ -1,0 +1,18 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8">
+<title>ai-three-center 插件列表</title>
+<style>body{font-family:-apple-system,system-ui,sans-serif;max-width:960px;margin:2rem auto;padding:0 1rem;color:#222}
+h1{border-bottom:2px solid #4a7;font-size:1.4rem}h2{margin-top:1.6rem}h3{font-size:1rem;color:#555}
+small{color:#777;font-weight:normal}code{background:#f4f4f4;padding:1px 5px;border-radius:3px}
+pre{background:#f7f7f7;padding:.8rem;border-radius:6px;overflow-x:auto;font-size:.85rem}
+table{border-collapse:collapse;width:100%}th,td{border:1px solid #ddd;padding:6px 10px;text-align:left;font-size:.9rem}
+th{background:#f0f0f0}.ver{color:#4a7;font-weight:bold}</style></head><body>
+<h1>插件列表 <span class="ver">registry v3</span></h1>
+<p>生成时间：2026-11-09T01:21:29+08:00 · 由 scripts/gen-registry.py 生成（纯静态零服务）</p>
+<section><h2>TabClaw 表格分析智能体 <small>(tabclaw · v0.1.0 · native · 授权: eng, data)</small></h2><p>交互式表格分析 AI 智能体：拖入 CSV/Excel，自然语言下达需求，先出计划、并行多智能体分析、记住用户偏好、可从交互中提炼可复用技能</p><h3>启动命令环境</h3><pre>workdir: repos/TabClaw
+config_files: setting.txt.example -> setting.txt
+config_note: API_KEY/BASE_URL/DEFAULT_MODEL 三项，BASE_URL 为方舟 OpenAI 兼容端点
+setup: python3 -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt
+start: source .venv/bin/activate && uvicorn app:app --host 0.0.0.0 --port 8000
+health: GET http://localhost:8000 -> 200
+port: 8000
+notes: numpy 必须 <2；端口 8000 勿与 mkdocs 预览同开</pre><h3>工具清单</h3><table><tr><th>工具名</th><th>描述</th><th>类别</th><th>授权中心</th></tr><tr><td><code>tabclaw__analyze_table</code></td><td>对表格数据（CSV/Excel/URL）做自然语言分析，返回结论与过程</td><td>db_read</td><td>eng, data</td></tr></table></section></body></html>

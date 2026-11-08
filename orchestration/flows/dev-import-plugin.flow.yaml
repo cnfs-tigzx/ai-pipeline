@@ -1,0 +1,20 @@
+# W6 流程定义 · 插件上架编排（开发中心：环境检查 → 信封消费演示 → registry 重建刷新列表页）
+# 真实使用：前置 W1 构建完成后执行；manifest/packages 编辑由 Cline 交互完成（W6-A/B）
+name: 插件上架
+center: eng
+nodes:
+  - name: detect
+    type: script
+    call: runtime.runtime.detect
+    args: {}
+  - name: consume_notice
+    type: envelope
+    action: claim_and_reply
+    center: data
+    result:
+      acknowledged: true
+      by: eng-flow-demo
+  - name: rebuild_registry
+    type: script
+    call: tools.tools.regen_registry
+    args: {}

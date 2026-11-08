@@ -1,0 +1,14 @@
+{
+  "slug": "tabclaw",
+  "name": "TabClaw 表格分析智能体",
+  "runtime": "native",
+  "artifact_path": "repos/TabClaw",
+  "entry": "uvicorn app:app --host 0.0.0.0 --port 8000",
+  "image_digest": null,
+  "sha256": "登记占位：执行 W6-B 步骤时以实际产物计算填写",
+  "built_at": "2026-11-08（构建部署实测见 data/assets/engineering/TabClaw/）",
+  "source_repo": "https://github.com/fishsure/TabClaw",
+  "source_commit": "420125a",
+  "health": "http://localhost:8000",
+  "notes": "numpy<2 锁定；setting.txt 凭据不入库"
+}

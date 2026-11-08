@@ -1,0 +1,20 @@
+# 中心-插件授权矩阵与审批规则（契约 4 · Tool 可见性基准）
+# grants.<center> 列出授权插件 slug；未列出的插件对该中心不可见。
+# approval: high_risk_tools 需人工 gate 放行（risk 字段 ≥ high 时）
+
+defaults:
+  audit_dir: data/assets/plugins/audit
+  param_hash: sha256               # 审计记录参数哈希算法（不落明文）
+  high_risk_classes: [db_read, db_write, scrape_remote]
+
+grants:
+  eng:
+    - tabclaw                       # 表格分析智能体（开发中心负责其构建上架）
+  data:
+    - tabclaw
+  solution:
+    []                              # 方案中心暂无插件需求，按需追加
+
+approval:
+  high_risk_tools: gate            # high 风险工具调用前转人工卡点
+  plugin_enable: manual            # 启用/停用插件须人工确认（registry 版本+1）

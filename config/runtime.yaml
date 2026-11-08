@@ -1,0 +1,26 @@
+# 运行时参数（docs/04-运行与降级.md §二）
+
+runner:
+  poll_interval_s: 5                # mailbox 与活跃 run 轮询间隔
+  single_flight_lock: true          # 同一 run 仅允许一个 runner（state.json 锁）
+
+llm:
+  timeout_s: 60
+  max_retries: 1
+
+mailbox:
+  deadline_default_s: 3600          # 信封默认处理时限
+  retention_days: 7                 # 信封保留期，过期可清理
+
+node:
+  max_retries: 2                    # 节点级重试，超限按 on_fail
+
+workspace:
+  root: /Users/tigzx/workspace/ai-pipeline
+  data_dir: data
+  db_dir: db
+  flows_dir: orchestration/flows
+  confirm_policy: docs/05-安全与确认策略.md    # 高危点定义出处
+
+resources:
+  orbstack_vm_mem_limit_gb: 16      # 仅开发中心可选 docker 打包时校验

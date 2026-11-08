@@ -1,0 +1,48 @@
+# 三中心定义（契约 5 · Orchestrator 与工具授权的基准）
+# center 字段与 mailbox 的 from/to 取值对齐：eng / data / solution
+
+centers:
+  eng:
+    name: 开发中心
+    slug: eng
+    dir: agents/engineering
+    core: cline-act                 # 内核：Cline act 模式
+    model_route: eng                # 指向 config/models.yaml routing.eng（GLM 系列）
+    memory_partition: eng
+    asset_namespace: engineering
+    tool_classes: [vcs, runtime, llm, assets, memory]
+    responsibilities:
+      - 拉取/编译/二次开发 GitHub 工程并打包为插件（目录包或 docker 镜像，docker 为可选）
+      - 插件上架：ov-plugin.yaml 登记 → tools.registry 版本+1 → 刷新插件列表页
+      - 插件安装/启动到三大中心（写 policy.yaml 授权并经 mailbox 通知）
+    workflows: [W1-fetch-build, W2-secondary-dev, W3-logo-rebrand, W4-git-sync, W6-plugin-release]
+
+  data:
+    name: 数策中心
+    slug: data
+    dir: agents/data
+    core: cline                     # 内核：Cline（act 为主，分析任务可切 plan 预演）
+    model_route: data               # deepseek 系列
+    memory_partition: data
+    asset_namespace: datacenter
+    tool_classes: [scrape, runtime, llm, assets, memory]
+    responsibilities:
+      - 网页/Excel → 二维表格 → SQLite（db/*.db）入库
+      - 分析各类数据库：统计、口径核对、业务决策支持
+      - 响应 mailbox read_data 信封，回置 dataset URI
+    workflows: [D1-table-import, D2-analysis]
+
+  solution:
+    name: 方案中心
+    slug: solution
+    dir: agents/solution
+    core: cline-plan                # 内核：Cline plan 模式
+    model_route: solution           # doubao 系列
+    memory_partition: solution
+    asset_namespace: solution
+    tool_classes: [scrape, llm, assets, memory]
+    responsibilities:
+      - 存储各类资料、方案样本、产品说明（assets 分层 L0/L1/full）
+      - 生成产品方案与论文（plan 出大纲 → gate 卡点 → 成文）
+      - 事实数据经 mailbox 向数策中心发 read_data 信封
+    workflows: [S1-manual, S2-proposal-paper]

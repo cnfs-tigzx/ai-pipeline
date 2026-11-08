@@ -26,9 +26,9 @@ usage() {
   build     重新构建（docker: compose build / native: 后端 mvn package + 前端 npm run build）
   status    查看服务状态（docker: compose ps / native: 进程存活+端口探测）
 
-联邦编排动作：
-  services [start|stop|restart|status|health] [mem0|openviking|weknora|caddy|all]
-            三层上下文联邦统一编排，转发至 scripts/pipeline-services.sh
+联邦编排动作（第一阶段已停用）：
+  services ...            联邦三件套（mem0/openviking/weknora/caddy）已脱离依赖并归档，
+                          本动作仅提示，不再转发；恢复见 docs/01-底座能力映射.md
 
 示例：
   ./scripts/one-key.sh tigzx-dicom start      指定项目
@@ -41,8 +41,9 @@ EOF
 
 # ---------- 参数解析 ----------
 if [ "${1:-}" = "services" ]; then
-    shift
-    exec "${PIPELINE_ROOT}/scripts/pipeline-services.sh" "$@"
+    echo "[one-key] services 动作已停用：三中心工程第一阶段脱离第三方 docker 运行服务依赖。"
+    echo "[one-key] 联邦编排脚本已归档 archive/pipeline-services.sh；恢复方案见 docs/01-底座能力映射.md"
+    exit 1
 fi
 if [ "$1" = "-h" ] || [ "$1" = "--help" ] || [ "$1" = "help" ]; then usage; exit 0; fi
 

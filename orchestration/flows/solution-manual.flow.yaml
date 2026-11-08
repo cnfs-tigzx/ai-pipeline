@@ -1,0 +1,35 @@
+# S1 流程定义 · 产品说明书（方案中心：资料收集 → 大纲 → 卡点 → 登记）
+# 真实使用：collect 节点换 scrape 抓取上游资料；outline 节点 messages 换真实指令
+name: 产品说明书
+center: solution
+nodes:
+  - name: collect
+    type: script
+    call: assets.assets.list
+    args:
+      namespace: solution
+      prefix: ''
+  - name: outline
+    type: llm
+    center: solution
+    options:
+      max_tokens: 500
+    messages:
+      - role: system
+        content: 你是方案中心智能体，用 plan 思路先出大纲再细化，禁止编造数据。
+      - role: user
+        content: '为主题"{topic}"生成产品说明书大纲（最多 5 章，每章一行）。已有资料数：{collect}'
+    on_fail: gate
+  - name: outline_gate
+    type: gate
+    note: '请审核大纲（artifacts/outline.json）后放行'
+  - name: register
+    type: script
+    call: assets.assets.write
+    args:
+      namespace: solution
+      path: manuals/outline-{topic}.md
+      content: '{outline.text}'
+      meta:
+        title: '{topic} 大纲'
+        gate: outline_gate

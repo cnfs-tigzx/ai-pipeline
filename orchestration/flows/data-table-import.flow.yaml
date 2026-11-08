@@ -1,0 +1,32 @@
+# D1 流程定义 · 表格入库（零网络演示版：本地样例 HTML → 二维表 → SQLite → 资产登记）
+# 真实使用：将 fetch 节点 call 换为 scrape.scrape.fetch，args.url 传目标网页
+name: 表格入库
+center: data
+nodes:
+  - name: fetch
+    type: script
+    call: scrape.scrape.fetch_local_html
+    args: {}
+  - name: extract
+    type: script
+    call: scrape.scrape.to_rows
+    args:
+      text: '{fetch.text}'
+  - name: import_db
+    type: script
+    call: db.db.table_from_rows
+    args:
+      table: t_demo_selftest
+      rows: '{extract}'
+      src_url: 'local://selftest'
+      note: runner 演示入库样例
+  - name: register
+    type: script
+    call: assets.assets.write
+    args:
+      namespace: datacenter
+      path: datasets/t_demo_selftest.md
+      content: '# t_demo_selftest 口径说明\n\n来源 local://selftest · 行数见 query\n'
+      meta:
+        title: 演示数据集口径
+        table: t_demo_selftest

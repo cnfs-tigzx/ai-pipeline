@@ -1,0 +1,42 @@
+{
+  "version": 3,
+  "generated_at": "2026-11-09T01:21:29+08:00",
+  "generated_by": "scripts/gen-registry.py",
+  "tools": [
+    {
+      "name": "tabclaw__analyze_table",
+      "slug": "tabclaw",
+      "description": "对表格数据（CSV/Excel/URL）做自然语言分析，返回结论与过程",
+      "side_effect": false,
+      "risk": "medium",
+      "class": "db_read",
+      "granted_centers": [
+        "eng",
+        "data"
+      ]
+    }
+  ],
+  "plugins": [
+    {
+      "slug": "tabclaw",
+      "name": "TabClaw 表格分析智能体",
+      "description": "交互式表格分析 AI 智能体：拖入 CSV/Excel，自然语言下达需求，先出计划、并行多智能体分析、记住用户偏好、可从交互中提炼可复用技能",
+      "version": "0.1.0",
+      "runtime": "native",
+      "env": {
+        "workdir": "repos/TabClaw",
+        "config_files": "setting.txt.example -> setting.txt",
+        "config_note": "API_KEY/BASE_URL/DEFAULT_MODEL 三项，BASE_URL 为方舟 OpenAI 兼容端点",
+        "setup": "python3 -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt",
+        "start": "source .venv/bin/activate && uvicorn app:app --host 0.0.0.0 --port 8000",
+        "health": "GET http://localhost:8000 -> 200",
+        "port": 8000,
+        "notes": "numpy 必须 <2；端口 8000 勿与 mkdocs 预览同开"
+      },
+      "grants": [
+        "eng",
+        "data"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+# 模型路由（契约 1 · LLM）。密钥只由 llm.py 从 ARK_API_KEY 环境变量或根目录密钥文件读取。
+# provider: volcengine-ark（OpenAI-compatible，base_url 见下方）
+# 注意：doubao/deepseek 接入点待补（占位 sentinel-as-doubao-01 / sentinel-as-deepseek-01），
+#       未配置的模型在启动检查中标注 skip，全部缺失则进入离线模式。
+provider:
+  name: volcengine-ark
+  base_url: https://ark.cn-beijing.volces.com/api/v3
+  style: openai-compatible          # POST {base_url}/chat/completions；Authorization: Bearer ARK_API_KEY
+  timeout_s: 60
+  max_retries: 1
+
+routing:
+  eng:                              # 开发中心 · cline act 模式 · GLM 系列
+    primary: ep-20261105181307-4s825        # GLM-5.3-Flash（已配置）
+    fallback: []
+  solution:                         # 方案中心 · cline plan 模式 · doubao 系列
+    primary: sentinel-as-doubao-01         # TODO: 替换为方舟 doubao 文本模型接入点 ID
+    fallback: []
+  data:                             # 数策中心 · deepseek 系列
+    primary: sentinel-as-deepseek-01       # TODO: 替换为方舟 deepseek 模型接入点 ID
+    fallback: []
+
+embedding:                          # 计量与检索演进位使用
+  model: ep-20261102001943-79bg5            # Doubao-embedding-vision（已配置）
+
+offline_mode:
+  enabled: true                     # 密钥缺失/全部模型不可用时自动进入
+  placeholder: "[离线模式] 模型调用不可用，请转人工卡点处理。"

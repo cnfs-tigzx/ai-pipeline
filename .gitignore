@@ -31,6 +31,7 @@ preflight-report.md
 
 # ========== 下游项目数据/测试数据 ==========
 data/
+db/
 
 # 临时文件
 *.tmp

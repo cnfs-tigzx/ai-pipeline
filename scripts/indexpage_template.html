@@ -48,6 +48,17 @@ font-size:12px;font-weight:600;border-radius:99px;padding:4px 10px;border:1.5px 
 .sw.on.data{background:var(--data);color:#fff;border-color:var(--data)}
 .sw.on.sol{background:var(--sol);color:#fff;border-color:var(--sol)}
 .sw.pend{outline:2px dashed #d4a72c;outline-offset:1px}
+.svcrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.svc{border:0;border-radius:8px;padding:7px 13px;font-size:12.5px;font-weight:700;cursor:pointer}
+.svc.start{background:var(--eng);color:#fff}
+.svc.stop{background:#fff;color:var(--danger);border:1px solid var(--danger)!important}
+.svc.st{background:#fff;color:var(--mut);border:1px solid var(--line)!important}
+.svc:disabled{opacity:.5;cursor:wait}
+.dot{width:8px;height:8px;border-radius:99px;display:inline-block}
+.dot.on{background:var(--eng)}.dot.off{background:#8c959f}
+#connlbl{font-size:12px;color:var(--mut)}
+.toast{position:fixed;top:60px;right:20px;background:var(--ink);color:#fff;border-radius:8px;
+padding:10px 16px;font-size:12.5px;z-index:99;max-width:420px;white-space:pre-wrap}
 .panel{position:fixed;bottom:0;left:0;right:0;background:#ffffffee;backdrop-filter:blur(6px);
 border-top:1px solid var(--line);padding:12px 22px;display:none;gap:12px;align-items:center;flex-wrap:wrap;z-index:9}
 .panel.show{display:flex}
@@ -65,6 +76,7 @@ footer{max-width:1080px;margin:0 auto;padding:0 22px 30px;color:var(--mut);font-
   <h1>三中心门户 · 插件与 MCP 服务</h1>
   <span class="meta">registry v<span id="rv"></span> · 生成于 <span id="gt"></span></span>
   <span id="cbadges" style="display:flex;gap:6px"></span>
+  <span id="connlbl"><span class="dot off" id="conn"></span> <span id="conntxt">检测控制台…</span></span>
 </header>
 <main>
   <div class="tabs" id="tabs"></div>
@@ -109,22 +121,49 @@ function switches(kind, item){
 }
 
 function cardDocker(it){
-  return '<div class="card"><h3>' + it.name + badge('DOCKER', 't-docker') + '</h3>' +
+  const svc = it.service || {status: 'unknown'};
+  return '<div class="card"><h3>' + it.name + badge('DOCKER', 't-docker') + svcBadge(svc) + '</h3>' +
     '<div class="desc">' + (it.description || '') + '</div>' +
     '<div class="kv"><b>产物</b>：' + (it.artifact_path || '-') + '</div>' +
     '<div class="kv"><b>镜像摘要</b>：' + (it.image_digest ? String(it.image_digest).slice(0, 26) + '…' : '未登记（W6-B）') + '</div>' +
     '<div class="kv"><b>健康探测</b>：' + (it.health || '-') + '</div>' +
+    (CONNECTED ? svcButtons(it.slug, svc) : '') +
     switches('docker', it) + '</div>';
+}
+
+function svcBadge(svc){
+  if (!svc) return '';
+  const cls = svc.status === 'running' ? 't-native' : 't-off';
+  return '<span class="tag ' + cls + '">' + (svc.status === 'running' ? '运行中' : '已停止') + '</span>';
+}
+
+function svcButtons(slug, svc){
+  const running = svc.status === 'running';
+  return '<div class="svcrow">' +
+    (running
+      ? '<button class="svc stop" onclick="svcAction(\'' + slug + '\',\'stop\')">停止服务</button>'
+      : '<button class="svc start" onclick="svcAction(\'' + slug + '\',\'start\')">启动服务</button>') +
+    '<button class="svc st" onclick="svcAction(\'' + slug + '\',\'status\')">刷新状态</button>' +
+    (it_cline_mcp(slug) ? '<span class="tag t-native">Cline MCP 已配置</span>' : '') +
+    '</div>';
+}
+
+function it_cline_mcp(slug){
+  const all = (INVENTORY.plugins || []).concat(INVENTORY.docker || []);
+  const it = all.find(x => x.slug === slug);
+  return it && it.cline_mcp;
 }
 
 function cardPlugin(it){
   const tools = (INVENTORY.tools_view || []).filter(t => t.slug === it.slug);
-  return '<div class="card"><h3>' + it.name + badge('插件·' + (it.runtime || 'native').toUpperCase(), 't-native') + '</h3>' +
+  const svc = it.service || {status: 'unknown'};
+  return '<div class="card"><h3>' + it.name + badge('插件·' + (it.runtime || 'native').toUpperCase(), 't-native') + svcBadge(svc) + '</h3>' +
     '<div class="desc">' + (it.description || '') + '</div>' +
     '<div class="kv"><b>版本</b>：' + (it.version || '-') + ' · <b>产物</b>：' + (it.artifact_path || '-') + '</div>' +
     (tools.length ? '<details><summary>工具清单（' + tools.length + '）</summary>' +
       '<pre>' + tools.map(t => t.name + '  [' + (t.class || '-') + '/' + (t.risk || '-') + ']  ' + t.description).join('\n') + '</pre></details>' : '') +
     '<details><summary>启动命令环境</summary><pre>' + JSON.stringify(it.env_plain || {}, null, 1) + '</pre></details>' +
+    (CONNECTED ? svcButtons(it.slug, svc) : '') +
     switches('plugin', it) + '</div>';
 }
 
@@ -187,13 +226,58 @@ function count(tab){
 }
 function setTab(t){ TAB = t; render(); }
 
+let CONNECTED = false;
+const CTRL = 'http://127.0.0.1:8765';
+
+function toast(msg){
+  const t = document.createElement('div');
+  t.className = 'toast'; t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 4000);
+}
+
+function applyState(state){
+  if (!state) return;
+  INVENTORY.docker = state.docker || [];
+  INVENTORY.mcp = state.mcp || [];
+  INVENTORY.plugins = state.plugins || [];
+  INVENTORY.registry_version = state.registry_version;
+  INVENTORY.generated_at = state.generated_at;
+  INVENTORY.tools_view = state.tools_view || INVENTORY.tools_view;
+  INVENTORY.cline_mcp = state.cline_mcp;
+}
+
+function api(action, payload){
+  return fetch(CTRL + '/api/action', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(Object.assign({action}, payload || {}))})
+    .then(r => r.json());
+}
+
 function toggle(kind, slug, c){
-  const k = key(kind, slug, c);
   const item = (kind === 'docker' ? INVENTORY.docker : kind === 'mcp' ? INVENTORY.mcp : INVENTORY.plugins)
     .find(x => x.slug === slug);
   const nowOn = effOn(kind, slug, item, c);
+  const act = nowOn ? 'revoke' : 'grant';
+  if (CONNECTED){
+    const cname = (CENTERS.find(x => x.id === c) || {}).name || c;
+    toast((act === 'grant' ? '授权中' : '移除中') + '：' + slug + ' → ' + cname + ' …');
+    api(act, {slug, center: c}).then(res => {
+      if (res.ok !== false){
+        applyState(res.state || null);
+        toast((res.message || (act === 'grant' ? '已授权' : '已移除')) +
+          (res.cline ? '\nCline MCP 配置：' + res.cline.action +
+            (res.cline.missing_env && res.cline.missing_env.length
+              ? '（需人工补配 env：' + res.cline.missing_env.join(', ') + '）' : '') +
+            '\n重启 Cline 后生效' : ''));
+      } else { toast('失败：' + (res.error || res.message || 'unknown')); }
+      render();
+    }).catch(e => { toast('控制台异常：' + e); render(); });
+    return;
+  }
+  const k = key(kind, slug, c);
   if (PENDING[k]) delete PENDING[k];
-  else PENDING[k] = {kind, slug, center: c, action: nowOn ? 'revoke' : 'grant', at: new Date().toISOString()};
+  else PENDING[k] = {kind, slug, center: c, action: act, at: new Date().toISOString()};
   localStorage.setItem('indexpage-pending', JSON.stringify(PENDING));
   render();
 }
@@ -223,21 +307,67 @@ document.getElementById('clearp').onclick = function(){
 };
 
 // 对齐：pending 期望状态已与 inventory 授权一致（apply 后重新生成）→ 自动清除；
-// 条目不存在 → 清除。MCP 类 grant 保留（需人工在 Cline 设置操作）。
-(function syncPending(){
+// 条目不存在 → 清除；超 30 分钟的陈旧意向 → 清除。MCP 类 grant 保留（需人工在 Cline 设置操作）。
+function syncPending(){
   let dirty = false;
+  const now = Date.now();
   for (const k of Object.keys(PENDING)){
     const p = PENDING[k];
     const item = (p.kind === 'docker' ? INVENTORY.docker :
                   p.kind === 'mcp' ? INVENTORY.mcp : INVENTORY.plugins)
       .find(x => x.slug === p.slug);
-    if (!item){ delete PENDING[k]; dirty = true; continue; }
+    if (!item || (p.at && now - new Date(p.at).getTime() > 30 * 60 * 1000)){
+      delete PENDING[k]; dirty = true; continue;
+    }
     const nowOn = p.kind === 'mcp' ? false : item.grants.includes(p.center);
     if ((p.action === 'grant') === nowOn){ delete PENDING[k]; dirty = true; }
   }
   if (dirty) localStorage.setItem('indexpage-pending', JSON.stringify(PENDING));
-})();
-render();
+}
+syncPending();
+
+function svcAction(slug, act){
+  const btns = document.querySelectorAll('.svc');
+  btns.forEach(b => b.disabled = true);
+  toast((act === 'start' ? '启动' : act === 'stop' ? '停止' : '查询') + '服务：' + slug + ' …');
+  api(act, {slug}).then(res => {
+    if (res.state !== undefined && res.state) applyState(res.state);
+    else if (res.slug) {
+      const it = INVENTORY.plugins.concat(INVENTORY.docker).find(x => x.slug === slug);
+      if (it) it.service = res;   // start/stop/status 响应均带 service 结果
+    }
+    toast(slug + ' → ' + (res.status || (res.ok ? '完成' : '失败')) +
+      (res.error ? '\n' + res.error : '') +
+      (res.health && res.health.ok ? '\n健康探测通过' : ''));
+    render();
+  }).catch(e => { toast('控制台异常：' + e); btns.forEach(b => b.disabled = false); });
+}
+
+function init(){
+  fetch(CTRL + '/api/ping', {signal: AbortSignal.timeout ? AbortSignal.timeout(1500) : undefined})
+    .then(r => r.json()).then(p => {
+      if (p.ok){
+        CONNECTED = true;
+        document.getElementById('conn').className = 'dot on';
+        document.getElementById('conntxt').textContent = '控制台已连接（:8765）· 按钮直控模式';
+        return fetch(CTRL + '/api/state').then(r => r.json()).then(res => {
+          applyState(res.state);
+          syncPending();   // 用互联拉取的最新授权状态对齐待应用项
+          render();
+        });
+      }
+      throw new Error('not ok');
+    })
+    .catch(() => {
+      CONNECTED = false;
+      document.getElementById('conn').className = 'dot off';
+      document.getElementById('conntxt').textContent =
+        '控制台未连接 · 离线决策模式（启动: python3 scripts/control_server.py）';
+      render();
+    });
+}
+
+init();
 </script>
 </body>
 </html>

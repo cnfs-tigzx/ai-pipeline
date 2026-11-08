@@ -20,6 +20,8 @@ sys.path.insert(0, os.path.join(ROOT, 'capabilities'))
 
 import _common as cm  # noqa: E402
 import _yamlmini as y  # noqa: E402
+import services.services as services  # noqa: E402
+import clinecfg.clinecfg as clinecfg  # noqa: E402
 
 PAGE_DIR = os.path.join(ROOT, 'plugins', 'IndexPage')
 REGISTRY = os.path.join(cm.CONFIG, 'tools.registry.json')
@@ -77,6 +79,14 @@ def _mcp_inventory():
     return out, os.path.relpath(src, os.path.expanduser('~'))
 
 
+def manifest_mcp_server(slug):
+    """读 manifest 的结构化 mcp_server 定义（无则 None）"""
+    mpath = os.path.join(cm.ROOT, 'plugins', 'manifests', slug, 'ov-plugin.yaml')
+    if not os.path.exists(mpath):
+        return None
+    return y.load(mpath).get('mcp_server')
+
+
 def inventory():
     reg = _registry()
     grants = _policy_grants()
@@ -105,6 +115,10 @@ def inventory():
             'grants': [c for c in CENTERS if slug in grants[c]],
         }
         (docker if item['runtime'] == 'docker' else native_plugins).append(item)
+    # 服务实例状态 + Cline MCP 配置状态（互联视图）
+    for item in docker + native_plugins:
+        item['service'] = services.status(item['slug'])
+        item['cline_mcp'] = clinecfg.has_server(item['slug'])
     return {
         'generated_at': cm.now_iso(),
         'registry_version': reg.get('version', 0),

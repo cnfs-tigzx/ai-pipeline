@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-11-09T01:45:00+08:00",
-  "registry_version": 6,
+  "generated_at": "2026-11-09T02:09:57+08:00",
+  "registry_version": 9,
   "centers": [
     {
       "id": "eng",
@@ -50,7 +50,7 @@
     {
       "name": "tabclaw",
       "kind": "stdio",
-      "endpoint": "python3 /Users/tigzx/workspace/ai-pipeline/repos/TabClaw/integrations/tabclaw-mcp/mcp_server.py",
+      "endpoint": "python3 repos/TabClaw/integrations/tabclaw-mcp/mcp_server.py",
       "legacy": false,
       "note": "",
       "status": "active",
@@ -71,8 +71,21 @@
       "image_digest": null,
       "grants": [
         "eng",
-        "data"
+        "data",
+        "solution"
       ],
+      "service": {
+        "slug": "tabclaw",
+        "runtime": "native",
+        "pid": 55342,
+        "status": "running",
+        "health": {
+          "ok": true,
+          "status": 200
+        },
+        "log": "output/tabclaw-native.log"
+      },
+      "cline_mcp": true,
       "env_plain": {
         "workdir": "repos/TabClaw",
         "config_files": "setting.txt.example -> setting.txt",
@@ -80,6 +93,7 @@
         "setup": "python3 -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt",
         "start": "source .venv/bin/activate && uvicorn app:app --host 0.0.0.0 --port 8000",
         "health": "GET http://localhost:8000 -> 200",
+        "health_wait_s": 12,
         "port": 8000,
         "notes": "numpy 必须 <2；端口 8000 勿与 mkdocs 预览同开"
       }

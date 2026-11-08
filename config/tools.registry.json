@@ -1,6 +1,6 @@
 {
-  "version": 6,
-  "generated_at": "2026-11-09T01:45:00+08:00",
+  "version": 9,
+  "generated_at": "2026-11-09T02:08:39+08:00",
   "generated_by": "scripts/gen-registry.py",
   "tools": [
     {
@@ -12,7 +12,8 @@
       "class": "db_read",
       "granted_centers": [
         "eng",
-        "data"
+        "data",
+        "solution"
       ]
     }
   ],
@@ -30,12 +31,14 @@
         "setup": "python3 -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt",
         "start": "source .venv/bin/activate && uvicorn app:app --host 0.0.0.0 --port 8000",
         "health": "GET http://localhost:8000 -> 200",
+        "health_wait_s": 12,
         "port": 8000,
         "notes": "numpy 必须 <2；端口 8000 勿与 mkdocs 预览同开"
       },
       "grants": [
         "eng",
-        "data"
+        "data",
+        "solution"
       ]
     }
   ]

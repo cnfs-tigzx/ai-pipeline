@@ -16,24 +16,42 @@
 
 每个条目带 **eng / data / solution 三中心授权开关**（当前状态读 `plugins/policy.yaml` grants）。
 
-## 动态加入（决策闭环）
+## 动态加入（两种模式，页面自适应）
 
-1. 页面上切换目标中心开关（虚线描边 = 待应用；底部面板汇总）
-2. 点「导出决策」→ 下载 `decisions.json` → 放到本目录
-3. 终端执行 `python3 scripts/indexpage.py apply`：
-   - 插件/Docker 类 → 行级写回 `plugins/policy.yaml`（保留注释）→ registry 版本 +1 → 页面重新生成
-   - MCP 类 → 输出人工操作清单（`mcp-pending-manual.json`），授权位置在 Cline 扩展设置
-4. 刷新页面即见新授权状态（localStorage 待应用项自动对齐清除）
+### 互联模式（推荐）：控制台直控
+
+```
+python3 scripts/control_server.py        # 拉起本地控制台（127.0.0.1:8765，非常驻，Ctrl+C 退出）
+```
+
+页面自动检测到控制台后进入**按钮直控模式**（顶部绿点提示）：
+
+- **启动/停止服务**：插件卡按钮直发 → native（进程组管理+健康探测）/ docker（compose up/down），
+  结果实时刷新（服务状态徽章：运行中/已停止）
+- **三中心授权开关**：点击即写回 `plugins/policy.yaml`（registry 版本+1）；
+  **grant 时自动把插件以 MCP 方式写入 Cline 配置**（`cline_mcp_settings.json`，写前自动备份 `.auto-bak/`，
+  凭据 `$KEEP` 保留现有值）→ 重启 Cline（reload MCP）后三中心智能体即可经 MCP 调用该插件；
+  revoke 仅移除授权矩阵可见性（MCP 条目保留，避免影响其他中心）
+- 全部动作落审计 `data/assets/plugins/audit/`
+
+### 离线模式：决策文件闭环
+
+控制台未启动时页面自动降级（灰点）：开关→导出 decisions.json→`python3 scripts/indexpage.py apply`（同前文闭环）。
+
+### Cline 配置说明
+
+三中心共用同一 Cline 扩展实例；MCP 条目全局共享，**中心级隔离由 policy.yaml 授权矩阵承担**
+（各中心 Agent 经 `capabilities/tools.list('<center>')` 只见已授权插件）。凭据引用：`$KEEP`=保留现值 / `$ENV{NAME}` / `$FILE{relpath}`。
 
 ## 文件
 
 | 文件 | 说明 | 入 git |
 |---|---|---|
 | index.html | 页面（生成产物，可重新生成） | ✅ |
-| inventory.json | 盘点快照 | ✅ |
-| decisions.json | 待应用决策（apply 后自动归档为 decisions-applied-<ts>.json） | 时效文件，不入库 |
+| inventory.json | 盘点快照（含服务状态/Cline MCP 状态） | ✅ |
+| decisions.json | 离线模式待应用决策（apply 后自动归档） | ❌ 时效文件 |
 | mcp-pending-manual.json | MCP 人工操作清单 | ✅ |
 
 ## 兼容
 
-旧版静态列表页 `plugins-registry.html`（gen-registry.py --html）保留可用；本页为增强版（三中心开关 + MCP 盘点）。
+旧版静态列表页 `plugins-registry.html`（gen-registry.py --html）保留可用；本页为增强版（直控 + 三中心开关 + MCP 盘点）。

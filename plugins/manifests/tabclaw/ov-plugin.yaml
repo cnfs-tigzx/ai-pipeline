@@ -14,6 +14,7 @@ env:
   setup: python3 -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt
   start: source .venv/bin/activate && uvicorn app:app --host 0.0.0.0 --port 8000
   health: GET http://localhost:8000 -> 200
+  health_wait_s: 12
   port: 8000
   notes: numpy 必须 <2；端口 8000 勿与 mkdocs 预览同开
 tools:
@@ -25,5 +26,14 @@ tools:
       command: curl
       args: ['-s', '-X', 'POST', 'http://localhost:8000/api/analyze', '-H', 'Content-Type: application/json', '-d', '{payload}']
     timeout_s: 120
+mcp_server:                  # 启用时由 clinecfg 自动写入 Cline 配置（凭据 $KEEP=保留现有值）
+  type: stdio
+  command: python3
+  args:
+    - repos/TabClaw/integrations/tabclaw-mcp/mcp_server.py
+  env:
+    TABCLAW_USER: '$KEEP'
+    TABCLAW_PASS: '$KEEP'
+    TABCLAW_BASE_URL: '$KEEP'
 compat:
   mcp: 'stdio: python3 repos/TabClaw/mcp_server.py（若上游提供）'

@@ -154,6 +154,28 @@ def has_server(slug):
     return slug in cfg.get('mcpServers', {})
 
 
+def set_disabled(slug, disabled):
+    """切换 Cline 配置中 MCP server 的 disabled 开关（MCP 卡的真实启用/停用动作）"""
+    cfg, p = _read()
+    servers = cfg.get('mcpServers', {})
+    if slug not in servers:
+        return {'ok': False, 'error': 'Cline 配置中无 ' + slug}
+    servers[slug]['disabled'] = bool(disabled)
+    bak = _backup(p)
+    tmp = p + '.tmp'
+    with open(tmp, 'w', encoding='utf-8') as f:
+        json.dump(cfg, f, ensure_ascii=False, indent=2)
+    os.replace(tmp, p)
+    cm.append_jsonl(os.path.join(cm.DATA, 'assets', 'plugins', 'audit', cm.today_tag() + '.jsonl'),
+                    {'ts': cm.now_iso(), 'slug': slug, 'action': 'cline_mcp_disabled_set',
+                     'value': bool(disabled)})
+    sync_project_copy()
+    regen_mcp_docs()
+    return {'ok': True, 'slug': slug, 'disabled': bool(disabled),
+            'backup': os.path.relpath(bak, cm.ROOT),
+            'note': '重启 Cline（reload MCP）后生效'}
+
+
 def server_env_masked(slug):
     cfg, _ = _read()
     env = (cfg.get('mcpServers', {}).get(slug, {}) or {}).get('env', {})

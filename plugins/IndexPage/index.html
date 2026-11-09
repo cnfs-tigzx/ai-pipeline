@@ -181,8 +181,8 @@ footer{max-width:1080px;margin:0 auto;padding:0 22px 30px;color:var(--mut);font-
 </div>
 <script>
 const INVENTORY = {
-  "generated_at": "2026-11-09T23:08:53+08:00",
-  "registry_version": 17,
+  "generated_at": "2026-11-10T00:27:20+08:00",
+  "registry_version": 34,
   "centers": [
     {
       "id": "eng",
@@ -203,39 +203,47 @@ const INVENTORY = {
   "docker": [],
   "mcp": [
     {
+      "slug": "mem0",
       "name": "mem0",
       "kind": "stdio",
       "endpoint": "python3 /Users/tigzx/workspace/ai-pipeline/repos/mem0/integrations/codex-plugin/core/mcp_server.py",
       "legacy": true,
       "note": "联邦遗产（Mem0）— 第一阶段停用，恢复见 docs/01",
       "status": "legacy-disabled",
+      "disabled": true,
       "config_path": "Library/Application Support/Code/User/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json"
     },
     {
+      "slug": "openviking",
       "name": "openviking",
       "kind": "streamableHttp",
       "endpoint": "http://localhost:1933/mcp",
       "legacy": true,
       "note": "联邦遗产（OpenViking）— 第一阶段停用，恢复见 docs/01",
       "status": "legacy-disabled",
+      "disabled": true,
       "config_path": "Library/Application Support/Code/User/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json"
     },
     {
+      "slug": "weknora",
       "name": "weknora",
       "kind": "streamableHttp",
       "endpoint": "http://localhost:8080/mcp/4fb7fad2-d491-48a8-b75b-e27a68b84db4",
       "legacy": true,
       "note": "联邦遗产（WeKnora）— 第一阶段停用，恢复见 docs/01",
       "status": "legacy-disabled",
+      "disabled": true,
       "config_path": "Library/Application Support/Code/User/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json"
     },
     {
+      "slug": "tabclaw",
       "name": "tabclaw",
       "kind": "stdio",
       "endpoint": "python3 repos/TabClaw/integrations/tabclaw-mcp/mcp_server.py",
       "legacy": false,
       "note": "",
       "status": "active",
+      "disabled": false,
       "config_path": "Library/Application Support/Code/User/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json"
     }
   ],
@@ -258,7 +266,7 @@ const INVENTORY = {
       "service": {
         "slug": "tabclaw",
         "runtime": "native",
-        "pid": 15485,
+        "pid": 75932,
         "status": "running",
         "health": {
           "ok": true,
@@ -536,13 +544,23 @@ function cardPlugin(it){
 
 function cardMCP(it){
   const cls = it.kind === 'streamableHttp' ? 't-mcphttp' : 't-mcp';
-  return '<div class="card"><h3>' + it.name + badge(it.kind.toUpperCase(), cls) +
-    (it.legacy ? badge('已停用', 't-off') : '') + '</h3>' +
+  const dis = it.disabled;
+  const stateTag = it.legacy ? badge('联邦遗产', 't-off') :
+    (dis ? badge('已停用', 't-off') : badge('启用中', 't-native'));
+  let ctrl = '';
+  if (CONNECTED){
+    ctrl = '<div class="svcrow">' +
+      '<button class="svc ' + (dis ? 'start' : 'stop') + '" onclick="mcpToggle(\'' + it.slug + '\',' + (!dis) + ')">' +
+      (dis ? '在 Cline 启用' : '在 Cline 停用') + '</button>' +
+      '<span class="kv">写 cline_mcp_settings.json 的 disabled 字段（备份+审计）</span></div>';
+  } else {
+    ctrl = '<div class="kv">离线模式：MCP 启用/停用需控制台，或在 Cline 扩展设置中管理。</div>';
+  }
+  return '<div class="card"><h3>' + it.name + badge(it.kind.toUpperCase(), cls) + stateTag + '</h3>' +
     (it.legacy ? '<div class="legacy">⚠ ' + it.note + '</div>' : '') +
     '<div class="kv"><b>端点</b>：' + (it.endpoint || '-') + '</div>' +
     '<div class="kv"><b>配置位置</b>：' + (it.config_path || '-') + '</div>' +
-    '<div class="kv">MCP 授权在 Cline 扩展设置中管理；此开关导出的是给维护者的启用/停用建议清单。</div>' +
-    switches('mcp', it) + '</div>';
+    ctrl + '</div>';
 }
 </script>
 <script>
@@ -905,6 +923,19 @@ async function saveCfg(file, keysJoined, value){
 }
 
 // ---- 启动：探测控制台 → 拉取状态 → 进入默认视图 ----
+async function mcpToggle(slug, disabled){
+  btnLock(true);
+  const r = await api('mcp_toggle', {slug, disabled});
+  btnLock(false);
+  toast((r.ok ? ((disabled ? slug + ' → 已停用（disabled=true）' : slug + ' → 已启用（disabled=false）'))
+    : '失败：' + (r.error || 'unknown')) + (r.note ? '\n' + r.note : ''));
+  try {
+    const st = await fetch(CTRL + '/api/state').then(x => x.json());
+    applyState(st.state);
+  } catch (e) {}
+  render();
+}
+
 function init(){
   fetch(CTRL + '/api/ping', {signal: AbortSignal.timeout ? AbortSignal.timeout(1500) : undefined})
     .then(r => r.json()).then(p => {

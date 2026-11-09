@@ -128,6 +128,13 @@ class Handler(BaseHTTPRequestHandler):
             return services.status(slug)
         if action in ('grant', 'revoke'):
             center = req.get('center', '')
+            # MCP 类条目不是插件：policy 授权矩阵只管插件/Docker 产物，MCP 走 cline_mcp_toggle
+            inv = indexpage.build()
+            known = {x['slug'] for x in inv['plugins'] + inv['docker']}
+            if slug not in known:
+                return {'ok': False, 'error':
+                        '%s 是 MCP 服务（非插件）：三中心授权开关不适用。请使用 Cline 启用/停用开关'
+                        '（action=mcp_toggle），或在 Cline 扩展设置中管理。' % slug}
             ok, msg = indexpage.policy_edit(center, slug, add=(action == 'grant'))
             out = {'ok': ok, 'message': msg}
             if ok and action == 'grant':
@@ -138,6 +145,8 @@ class Handler(BaseHTTPRequestHandler):
                 indexpage.subprocess_regen_registry()
             out['state'] = _build_state()
             return out
+        if action == 'mcp_toggle':
+            return clinecfg.set_disabled(slug, bool(req.get('disabled')))
         if action == 'configure_mcp':
             mc = indexpage.manifest_mcp_server(slug)
             return clinecfg.upsert_server(slug, mc) if mc else \

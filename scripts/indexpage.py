@@ -68,12 +68,13 @@ def _mcp_inventory():
     for name, spec in (d.get('mcpServers', {}) or {}).items():
         kind = 'streamableHttp' if str(spec.get('type', '')).startswith('streamable') else 'stdio'
         legacy = name in LEGACY_MCP
-        item = {'name': name, 'kind': kind,
+        item = {'slug': name, 'name': name, 'kind': kind,
                 'endpoint': spec.get('url', '') or ' '.join([str(spec.get('command', ''))] +
                                                             [str(a) for a in spec.get('args', [])]),
                 'legacy': legacy,
                 'note': LEGACY_MCP.get(name, ''),
                 'status': 'legacy-disabled' if legacy else 'active',
+                'disabled': bool(spec.get('disabled', False)),
                 'config_path': os.path.relpath(src, os.path.expanduser('~'))}
         out.append(item)
     return out, os.path.relpath(src, os.path.expanduser('~'))

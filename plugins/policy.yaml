@@ -9,11 +9,11 @@ defaults:
 
 grants:
   eng:
-    - tabclaw                       # 表格分析智能体（开发中心负责其构建上架）
+    - tabclaw
   data:
     - tabclaw
   solution:
     []
 approval:
   high_risk_tools: gate            # high 风险工具调用前转人工卡点
-  plugin_enable: manual            # 启用/停用插件须人工确认（registry 版本+1）
+  plugin_enable: manual # 启用/停用插件须人工确认（registry 版本+1）

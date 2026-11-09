@@ -10,7 +10,7 @@
         "MEM0_API_URL": "$KEEP",
         "MEM0_USER_ID": "$KEEP"
       },
-      "disabled": false,
+      "disabled": true,
       "autoApprove": [
         "search_memories",
         "add_memory"
@@ -19,7 +19,7 @@
     "openviking": {
       "type": "streamableHttp",
       "url": "http://localhost:1933/mcp",
-      "disabled": false,
+      "disabled": true,
       "autoApprove": []
     },
     "weknora": {
@@ -28,7 +28,7 @@
       "headers": {
         "Authorization": "Bearer mcp_o40J5q4QXp5FutkC2__4G8EpYEvenMNNQXUxR1q5TOg"
       },
-      "disabled": false,
+      "disabled": true,
       "autoApprove": []
     },
     "tabclaw": {

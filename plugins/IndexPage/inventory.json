@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-11-09T23:08:53+08:00",
-  "registry_version": 17,
+  "generated_at": "2026-11-10T00:27:20+08:00",
+  "registry_version": 34,
   "centers": [
     {
       "id": "eng",
@@ -21,39 +21,47 @@
   "docker": [],
   "mcp": [
     {
+      "slug": "mem0",
       "name": "mem0",
       "kind": "stdio",
       "endpoint": "python3 /Users/tigzx/workspace/ai-pipeline/repos/mem0/integrations/codex-plugin/core/mcp_server.py",
       "legacy": true,
       "note": "联邦遗产（Mem0）— 第一阶段停用，恢复见 docs/01",
       "status": "legacy-disabled",
+      "disabled": true,
       "config_path": "Library/Application Support/Code/User/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json"
     },
     {
+      "slug": "openviking",
       "name": "openviking",
       "kind": "streamableHttp",
       "endpoint": "http://localhost:1933/mcp",
       "legacy": true,
       "note": "联邦遗产（OpenViking）— 第一阶段停用，恢复见 docs/01",
       "status": "legacy-disabled",
+      "disabled": true,
       "config_path": "Library/Application Support/Code/User/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json"
     },
     {
+      "slug": "weknora",
       "name": "weknora",
       "kind": "streamableHttp",
       "endpoint": "http://localhost:8080/mcp/4fb7fad2-d491-48a8-b75b-e27a68b84db4",
       "legacy": true,
       "note": "联邦遗产（WeKnora）— 第一阶段停用，恢复见 docs/01",
       "status": "legacy-disabled",
+      "disabled": true,
       "config_path": "Library/Application Support/Code/User/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json"
     },
     {
+      "slug": "tabclaw",
       "name": "tabclaw",
       "kind": "stdio",
       "endpoint": "python3 repos/TabClaw/integrations/tabclaw-mcp/mcp_server.py",
       "legacy": false,
       "note": "",
       "status": "active",
+      "disabled": false,
       "config_path": "Library/Application Support/Code/User/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json"
     }
   ],
@@ -76,7 +84,7 @@
       "service": {
         "slug": "tabclaw",
         "runtime": "native",
-        "pid": 15485,
+        "pid": 75932,
         "status": "running",
         "health": {
           "ok": true,

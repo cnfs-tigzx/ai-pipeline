@@ -256,13 +256,23 @@ function cardPlugin(it){
 
 function cardMCP(it){
   const cls = it.kind === 'streamableHttp' ? 't-mcphttp' : 't-mcp';
-  return '<div class="card"><h3>' + it.name + badge(it.kind.toUpperCase(), cls) +
-    (it.legacy ? badge('已停用', 't-off') : '') + '</h3>' +
+  const dis = it.disabled;
+  const stateTag = it.legacy ? badge('联邦遗产', 't-off') :
+    (dis ? badge('已停用', 't-off') : badge('启用中', 't-native'));
+  let ctrl = '';
+  if (CONNECTED){
+    ctrl = '<div class="svcrow">' +
+      '<button class="svc ' + (dis ? 'start' : 'stop') + '" onclick="mcpToggle(\'' + it.slug + '\',' + (!dis) + ')">' +
+      (dis ? '在 Cline 启用' : '在 Cline 停用') + '</button>' +
+      '<span class="kv">写 cline_mcp_settings.json 的 disabled 字段（备份+审计）</span></div>';
+  } else {
+    ctrl = '<div class="kv">离线模式：MCP 启用/停用需控制台，或在 Cline 扩展设置中管理。</div>';
+  }
+  return '<div class="card"><h3>' + it.name + badge(it.kind.toUpperCase(), cls) + stateTag + '</h3>' +
     (it.legacy ? '<div class="legacy">⚠ ' + it.note + '</div>' : '') +
     '<div class="kv"><b>端点</b>：' + (it.endpoint || '-') + '</div>' +
     '<div class="kv"><b>配置位置</b>：' + (it.config_path || '-') + '</div>' +
-    '<div class="kv">MCP 授权在 Cline 扩展设置中管理；此开关导出的是给维护者的启用/停用建议清单。</div>' +
-    switches('mcp', it) + '</div>';
+    ctrl + '</div>';
 }
 </script>
 <script>
@@ -625,6 +635,19 @@ async function saveCfg(file, keysJoined, value){
 }
 
 // ---- 启动：探测控制台 → 拉取状态 → 进入默认视图 ----
+async function mcpToggle(slug, disabled){
+  btnLock(true);
+  const r = await api('mcp_toggle', {slug, disabled});
+  btnLock(false);
+  toast((r.ok ? ((disabled ? slug + ' → 已停用（disabled=true）' : slug + ' → 已启用（disabled=false）'))
+    : '失败：' + (r.error || 'unknown')) + (r.note ? '\n' + r.note : ''));
+  try {
+    const st = await fetch(CTRL + '/api/state').then(x => x.json());
+    applyState(st.state);
+  } catch (e) {}
+  render();
+}
+
 function init(){
   fetch(CTRL + '/api/ping', {signal: AbortSignal.timeout ? AbortSignal.timeout(1500) : undefined})
     .then(r => r.json()).then(p => {

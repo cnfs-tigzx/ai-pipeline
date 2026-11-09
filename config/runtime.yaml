@@ -13,7 +13,7 @@ mailbox:
   retention_days: 7                 # 信封保留期，过期可清理
 
 node:
-  max_retries: 2                    # 节点级重试，超限按 on_fail
+  max_retries: 2 # 节点级重试，超限按 on_fail
 
 workspace:
   root: /Users/tigzx/workspace/ai-pipeline

@@ -13,7 +13,7 @@ grants:
   data:
     - tabclaw
   solution:
-    - tabclaw
+    []
 approval:
   high_risk_tools: gate            # high 风险工具调用前转人工卡点
   plugin_enable: manual            # 启用/停用插件须人工确认（registry 版本+1）

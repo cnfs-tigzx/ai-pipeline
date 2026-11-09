@@ -1,0 +1,50 @@
+{
+  "mcpServers": {
+    "mem0": {
+      "command": "python3",
+      "args": [
+        "/Users/tigzx/workspace/ai-pipeline/repos/mem0/integrations/codex-plugin/core/mcp_server.py"
+      ],
+      "env": {
+        "MEM0_API_KEY": "$KEEP",
+        "MEM0_API_URL": "$KEEP",
+        "MEM0_USER_ID": "$KEEP"
+      },
+      "disabled": false,
+      "autoApprove": [
+        "search_memories",
+        "add_memory"
+      ]
+    },
+    "openviking": {
+      "type": "streamableHttp",
+      "url": "http://localhost:1933/mcp",
+      "disabled": false,
+      "autoApprove": []
+    },
+    "weknora": {
+      "type": "streamableHttp",
+      "url": "http://localhost:8080/mcp/4fb7fad2-d491-48a8-b75b-e27a68b84db4",
+      "headers": {
+        "Authorization": "Bearer mcp_o40J5q4QXp5FutkC2__4G8EpYEvenMNNQXUxR1q5TOg"
+      },
+      "disabled": false,
+      "autoApprove": []
+    },
+    "tabclaw": {
+      "type": "stdio",
+      "command": "python3",
+      "args": [
+        "repos/TabClaw/integrations/tabclaw-mcp/mcp_server.py"
+      ],
+      "disabled": false,
+      "env": {
+        "TABCLAW_USER": "$KEEP",
+        "TABCLAW_PASS": "$KEEP",
+        "TABCLAW_BASE_URL": "$KEEP"
+      }
+    }
+  },
+  "_note": "工程内 Cline 配置副本（凭据脱敏为 $KEEP 占位）。真实凭据位置见 .clinerules/agent_init_rules.md；恢复时 clinecfg 以 $KEEP 回填现值或引用密钥文件。",
+  "skills": []
+}

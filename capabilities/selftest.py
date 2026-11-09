@@ -214,6 +214,31 @@ def t_mailbox():
     assert got['ok'] and got['result']['dataset_uri'].endswith('selftest')
 
 
+# ---------- 12. clinecfg 双写 ----------
+def t_clinecfg():
+    import clinecfg.clinecfg as cc
+    # 双写：upsert 测试条目（若全局配置不可写则跳过——CI/只读环境）
+    spec = {'type': 'stdio', 'command': 'echo', 'args': ['selftest'],
+            'env': {'ST_KEY': '$KEEP'}}
+    r = cc.upsert_server('zz-selftest-mcp', spec)
+    assert r['ok'] and r['action'] in ('created', 'updated'), r
+    # 工程副本同步断言（$KEEP 无旧值 → missing_env 提示人工补配，env 不落——均合法）
+    copy = json.load(open(cc.PROJECT_COPY, encoding='utf-8'))
+    assert 'zz-selftest-mcp' in copy['mcpServers'], copy['mcpServers'].keys()
+    env_val = copy['mcpServers']['zz-selftest-mcp'].get('env', {}).get('ST_KEY')
+    assert env_val in ('$KEEP', None), env_val
+    # docs 同步断言
+    docs = open(cc.MCP_DOCS, encoding='utf-8').read()
+    assert 'zz-selftest-mcp' in docs
+    # 清理：remove + 副本断言
+    rr = cc.remove_server('zz-selftest-mcp')
+    assert rr['ok']
+    copy2 = json.load(open(cc.PROJECT_COPY, encoding='utf-8'))
+    assert 'zz-selftest-mcp' not in copy2['mcpServers']
+    docs2 = open(cc.MCP_DOCS, encoding='utf-8').read()
+    assert 'zz-selftest-mcp' not in docs2.split(cc.AUTOGEN_END)[0]
+
+
 if __name__ == '__main__':
     skip_llm = '--skip-llm' in sys.argv
     check('yamlmini', t_yaml)
@@ -229,6 +254,7 @@ if __name__ == '__main__':
     if not skip_llm:
         check('llm', t_llm)
     check('mailbox', t_mailbox)
+    check('clinecfg', t_clinecfg)
     print('---')
     print(f'PASS {len(PASS)} / FAIL {len(FAIL)}')
     if FAIL:

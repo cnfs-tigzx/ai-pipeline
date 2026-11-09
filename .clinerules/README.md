@@ -14,6 +14,8 @@
 | 方案中心（plan+doubao：说明书/方案/论文） | agents/solution/README.md |
 | 能力模块接口（llm/memory/assets/tools/trace/scrape/vcs/runtime/mailbox） | capabilities/*/README.md |
 | 插件体系（清单规范/授权矩阵） | plugins/README.md · plugins/policy.yaml |
+| **MCP/插件/skills 安装登记纪律（安装即双写 init 资产）** | **.clinerules/agent_init_rules.md · agents/init/** |
+| 三中心门户（常驻 :8765 / 五视图 / 服务直控 / 配置编辑） | plugins/IndexPage/README.md |
 
 ## 联邦遗产
 

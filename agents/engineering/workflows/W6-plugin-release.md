@@ -36,5 +36,7 @@
 ## E. 收尾
 
 1. 资产登记：`data/assets/plugins/` 写上架记录（manifest 摘要 + 包哈希）
-2. 记忆归档（任务闭环）：踩坑/决策写入 memory（分区 eng，标签【安装测试】或【二次开发】）
-3. 追加 `output/task-log.md`
+2. **init 资产同步（agent_init_rules 纪律）**：确认 `agents/init/cline_mcp_settings.json` 与
+   `agents/init/mcp_docs.md` 已含本插件条目（若在步骤 D 做过 grant，clinecfg 已自动双写；否则手动补登记）
+3. 记忆归档（任务闭环）：踩坑/决策写入 memory（分区 eng，标签【安装测试】或【二次开发】）
+4. 追加 `output/task-log.md`

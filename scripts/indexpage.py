@@ -239,6 +239,12 @@ def subprocess_regen_registry():
     print(r.stdout.strip())
     if r.returncode != 0:
         print('registry 重建告警:', r.stderr[-300:])
+    # policy 变更 → mcp_docs 授权列同步（agents/init/ 双写纪律）
+    try:
+        import clinecfg.clinecfg as cc
+        cc.regen_mcp_docs()
+    except Exception as e:  # noqa: BLE001
+        print('mcp_docs 同步告警:', str(e)[:200])
 
 
 # ---------- 配置文件读写（页面 ↔ 工程配置映射） ----------

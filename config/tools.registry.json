@@ -1,6 +1,6 @@
 {
-  "version": 13,
-  "generated_at": "2026-11-09T16:03:04+08:00",
+  "version": 17,
+  "generated_at": "2026-11-09T23:08:53+08:00",
   "generated_by": "scripts/gen-registry.py",
   "tools": [
     {
@@ -12,8 +12,7 @@
       "class": "db_read",
       "granted_centers": [
         "eng",
-        "data",
-        "solution"
+        "data"
       ]
     }
   ],
@@ -37,8 +36,7 @@
       },
       "grants": [
         "eng",
-        "data",
-        "solution"
+        "data"
       ]
     }
   ]

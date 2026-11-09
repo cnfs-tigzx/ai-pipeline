@@ -142,14 +142,12 @@ def parse(text):
                 raise ValueError('yamlmini: key line inside list: ' + content)
             if v == '':
                 pending = (indent, k, container)
-            elif v == '[]':
-                lst = []
-                container[k] = lst
-                stack.append((indent, lst))
-            elif v == '{}':
-                d = {}
-                container[k] = d
-                stack.append((indent, d))
+            elif v.startswith('[') and v.endswith(']'):
+                # 单行流式数组（逗号分隔标量；不支持嵌套/引号内逗号）
+                inner = v[1:-1].strip()
+                container[k] = [_parse_scalar(x.strip()) for x in inner.split(',')] if inner else []
+            elif v.startswith('{') and v.endswith('}'):
+                raise ValueError('yamlmini: 不支持非空流式 map: ' + v)
             else:
                 container[k] = _parse_scalar(v)
 

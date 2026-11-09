@@ -1,7 +1,7 @@
 # 运行时参数（docs/04-运行与降级.md §二）
 
 runner:
-  poll_interval_s: 5                # mailbox 与活跃 run 轮询间隔
+  poll_interval_s: 5 # mailbox 与活跃 run 轮询间隔
   single_flight_lock: true          # 同一 run 仅允许一个 runner（state.json 锁）
 
 llm:

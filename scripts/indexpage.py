@@ -241,6 +241,166 @@ def subprocess_regen_registry():
         print('registry 重建告警:', r.stderr[-300:])
 
 
+# ---------- 配置文件读写（页面 ↔ 工程配置映射） ----------
+
+import subprocess  # noqa: E402
+
+CONFIG_FILES = {
+    'models': os.path.join(cm.CONFIG, 'models.yaml'),
+    'runtime': os.path.join(cm.CONFIG, 'runtime.yaml'),
+    'policy': POLICY,
+    'centers': os.path.join(cm.CONFIG, 'centers.yaml'),   # 只读（中心定义唯一注册处）
+}
+
+
+def load_config():
+    """各配置页对应的配置文件快照（解析后 JSON 视图 + 文件路径）"""
+    return {
+        'models': y.load(CONFIG_FILES['models']),
+        'runtime': y.load(CONFIG_FILES['runtime']),
+        'policy': y.load(CONFIG_FILES['policy']),
+        'centers': y.load(CONFIG_FILES['centers']),
+        'paths': {k: os.path.relpath(v, cm.ROOT) for k, v in CONFIG_FILES.items()},
+    }
+
+
+def save_config(file, keys, value):
+    """写回配置文件；models/runtime/一般 yaml 键走行级写回，policy.grants 走授权矩阵专用编辑。
+    全部先备份 .auto-bak/<ts>-config/。返回 (ok, message, config)"""
+    assert file in ('models', 'runtime', 'policy'), '非法配置文件: ' + str(file)
+    p = CONFIG_FILES[file]
+    bdir = os.path.join(cm.ROOT, '.auto-bak', cm.today_tag() + '-config')
+    os.makedirs(bdir, exist_ok=True)
+    dest = os.path.join(bdir, os.path.basename(p))
+    if not os.path.exists(dest):
+        import shutil
+        shutil.copy2(p, dest)
+    cm.append_jsonl(os.path.join(cm.DATA, 'assets', 'plugins', 'audit', cm.today_tag() + '.jsonl'),
+                    {'ts': cm.now_iso(), 'action': 'config_set', 'file': file,
+                     'keys': keys, 'value': str(value)[:120]})
+    if file == 'policy' and len(keys) >= 2 and keys[0] == 'grants':
+        ok, msg = policy_edit(keys[1], str(value), add=(str(value).lower() != 'false'))
+        return ok, msg, load_config()
+    changed, old, new = cm.yaml_set(p, keys, value)
+    if not changed:
+        return False, str(old), load_config()
+    subprocess_regen_registry()
+    return True, '%s → %s' % ('/'.join(keys), value), load_config()
+
+
+# ---------- GitHub 拉取/编译/部署（开发中心页面化） ----------
+
+def _repo_name(url):
+    n = os.path.basename(str(url).rstrip('/'))
+    return n[:-4] if n.endswith('.git') else n
+
+
+def github_import(url):
+    """pipeline.sh 拉取 + 简版解析（deploy_mode/端口/简介）→ data/assets/engineering/<repo>/"""
+    url = str(url).strip()
+    if not url.startswith(('http://', 'https://', 'git@')):
+        return {'ok': False, 'error': '非法仓库地址'}
+    r = rt_run(['zsh', '-c',
+                os.path.join(cm.ROOT, 'scripts', 'pipeline.sh') + ' ' + url],
+               timeout_s=600)
+    repo = _repo_name(url)
+    parse = github_analyze(repo)
+    repo_exists = os.path.isdir(os.path.join(cm.ROOT, 'repos', repo, '.git'))
+    return {'ok': bool(repo_exists), 'repo': repo,
+            'pull_output': (r.get('stdout', '') + r.get('stderr', ''))[-800:],
+            'pull_ok': r.get('ok', False),
+            'parse': parse, 'parse_saved': parse.get('saved')}
+
+
+def rt_run(cmd, timeout_s=120):
+    """subprocess 包装（indexpage 内部用）"""
+    try:
+        r = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout_s, cwd=cm.ROOT)
+        return {'ok': r.returncode == 0, 'code': r.returncode,
+                'stdout': r.stdout[-4000:], 'stderr': r.stderr[-2000:]}
+    except subprocess.TimeoutExpired:
+        return {'ok': False, 'stdout': '', 'stderr': 'timeout'}
+    except FileNotFoundError as e:
+        return {'ok': False, 'stdout': '', 'stderr': str(e)}
+
+
+def github_analyze(repo):
+    """简版 9 维度解析（deploy_mode / 端口 / 简介 / 启动方式线索）"""
+    root = os.path.join(cm.ROOT, 'repos', repo)
+    if not os.path.isdir(root):
+        return {'ok': False, 'error': 'repos/%s 不存在' % repo}
+    files = os.listdir(root)
+    mode, hints = 'unknown', []
+    if any(f.startswith('docker-compose') and ('.yml' in f or '.yaml' in f) for f in files):
+        mode = 'docker'
+    elif 'pom.xml' in files:
+        mode = 'native-java'
+    elif 'package.json' in files:
+        mode = 'native-node'
+    elif 'requirements.txt' in files or 'app.py' in files or 'main.py' in files:
+        mode = 'native-python'
+    ports = []
+    import re
+    for f in files:
+        if f.startswith('docker-compose') and ('.yml' in f or '.yaml' in f):
+            txt = cm.read_text(os.path.join(root, f))
+            ports = re.findall(r'-\s*["\']?(\d{2,5})[:\s]', txt)[:8]
+    readme = ''
+    for cand in ('README.md', 'README_zh.md', 'README_CN.md', 'readme.md'):
+        if cand in files:
+            readme = cm.read_text(os.path.join(root, cand))[:400]
+            break
+    data = {'repo': repo, 'deploy_mode': mode, 'ports': ports,
+            'intro': readme.splitlines()[0][:120] if readme else '',
+            'parsed_by': 'indexpage-lite', 'parsed_at': cm.now_iso(),
+            'files_sample': files[:25], 'hints': hints}
+    cm.atomic_write_json(os.path.join(cm.DATA, 'assets', 'engineering', repo, 'readme-parse.json'), data)
+    data['saved'] = 'data/assets/engineering/%s/readme-parse.json' % repo
+    return data
+
+
+def github_action(repo, action):
+    """one-key.sh 页面化：start/stop/build/status（部署模式自动检测由 one-key 承担）"""
+    assert action in ('start', 'stop', 'build', 'status'), '非法动作'
+    r = rt_run([os.path.join(cm.ROOT, 'scripts', 'one-key.sh'), repo, action], timeout_s=900)
+    tail = (r.get('stdout', '') + r.get('stderr', ''))[-1500:]
+    return {**r, 'action': action, 'repo': repo, 'output': tail}
+
+
+# ---------- 产品文档（方案中心页面化） ----------
+
+def docs_list():
+    import assets.assets as ast
+    return {'ok': True, 'items': ast.list('solution', 'manuals/') + ast.list('solution', 'papers/')}
+
+
+def docs_outline(topic, audience=''):
+    import llm.llm as llm
+    r = llm.complete('solution', 'docs-outline', [
+        {'role': 'system', 'content': '你是方案中心智能体。先出大纲再细化，禁止编造数据。'},
+        {'role': 'user', 'content': '为主题「%s」生成产品功能文档大纲（5 章内，每章一行）。读者：%s' % (topic, audience or '产品/业务')},
+    ], {'max_tokens': 600})
+    return r
+
+
+def docs_full(topic, outline, audience=''):
+    """按大纲成文（degraded 时返回降级标记，页面转人工编辑）"""
+    import llm.llm as llm
+    r = llm.complete('solution', 'docs-full', [
+        {'role': 'system', 'content': '你是方案中心智能体。按给定大纲用 Markdown 成文；数据口径缺失处标「待补」，禁止编造。'},
+        {'role': 'user', 'content': '主题「%s」（读者：%s）按以下大纲成文（全文 Markdown）：\n%s' % (topic, audience or '产品/业务', outline)},
+    ], {'max_tokens': 4000})
+    return r
+
+
+def docs_write(topic, content, kind='manuals'):
+    import assets.assets as ast
+    safe = ''.join(c for c in topic if c not in '/\\:*?"<>| ')[:60] or 'untitled'
+    uri = ast.write('solution', '%s/%s.md' % (kind, safe), content,
+                    {'title': topic, 'via': 'IndexPage'})
+    return {'ok': True, 'uri': uri}
+
+
 # ---------- build ----------
 
 TEMPLATE = os.path.join(ROOT, 'scripts', 'indexpage_template.html')
@@ -261,6 +421,7 @@ def build():
                           'description': t.get('description'),
                           'class': t.get('class'), 'risk': t.get('risk')}
                          for t in reg.get('tools', [])]
+    inv['config'] = load_config()
     # 插件卡带 env_plain
     for p in inv['plugins']:
         mpath = os.path.join(cm.ROOT, 'plugins', 'manifests', p['slug'], 'ov-plugin.yaml')

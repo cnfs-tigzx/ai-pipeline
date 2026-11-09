@@ -17,7 +17,7 @@ routing:
     primary: sentinel-as-doubao-01         # TODO: 替换为方舟 doubao 文本模型接入点 ID
     fallback: []
   data:                             # 数策中心 · deepseek 系列
-    primary: sentinel-as-deepseek-01       # TODO: 替换为方舟 deepseek 模型接入点 ID
+    primary: sentinel-as-deepseek-01 # TODO: 替换为方舟 deepseek 模型接入点 ID
     fallback: []
 
 embedding:                          # 计量与检索演进位使用

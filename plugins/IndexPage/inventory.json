@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-11-09T02:09:57+08:00",
-  "registry_version": 9,
+  "generated_at": "2026-11-09T16:10:34+08:00",
+  "registry_version": 13,
   "centers": [
     {
       "id": "eng",
@@ -77,7 +77,7 @@
       "service": {
         "slug": "tabclaw",
         "runtime": "native",
-        "pid": 55342,
+        "pid": 15485,
         "status": "running",
         "health": {
           "ok": true,
@@ -108,5 +108,177 @@
       "class": "db_read",
       "risk": "medium"
     }
-  ]
+  ],
+  "config": {
+    "models": {
+      "provider": {
+        "name": "volcengine-ark",
+        "base_url": "https://ark.cn-beijing.volces.com/api/v3",
+        "style": "openai-compatible",
+        "timeout_s": 60,
+        "max_retries": 1
+      },
+      "routing": {
+        "eng": {
+          "primary": "ep-20261105181307-4s825",
+          "fallback": []
+        },
+        "solution": {
+          "primary": "sentinel-as-doubao-01",
+          "fallback": []
+        },
+        "data": {
+          "primary": "sentinel-as-deepseek-01",
+          "fallback": []
+        }
+      },
+      "embedding": {
+        "model": "ep-20261102001943-79bg5"
+      },
+      "offline_mode": {
+        "enabled": true,
+        "placeholder": "[离线模式] 模型调用不可用，请转人工卡点处理。"
+      }
+    },
+    "runtime": {
+      "runner": {
+        "poll_interval_s": 5,
+        "single_flight_lock": true
+      },
+      "llm": {
+        "timeout_s": 60,
+        "max_retries": 1
+      },
+      "mailbox": {
+        "deadline_default_s": 3600,
+        "retention_days": 7
+      },
+      "node": {
+        "max_retries": 2
+      },
+      "workspace": {
+        "root": "/Users/tigzx/workspace/ai-pipeline",
+        "data_dir": "data",
+        "db_dir": "db",
+        "flows_dir": "orchestration/flows",
+        "confirm_policy": "docs/05-安全与确认策略.md"
+      },
+      "resources": {
+        "orbstack_vm_mem_limit_gb": 16
+      }
+    },
+    "policy": {
+      "defaults": {
+        "audit_dir": "data/assets/plugins/audit",
+        "param_hash": "sha256",
+        "high_risk_classes": [
+          "db_read",
+          "db_write",
+          "scrape_remote"
+        ]
+      },
+      "grants": {
+        "eng": [
+          "tabclaw"
+        ],
+        "data": [
+          "tabclaw"
+        ],
+        "solution": [
+          "tabclaw"
+        ]
+      },
+      "approval": {
+        "high_risk_tools": "gate",
+        "plugin_enable": "manual"
+      }
+    },
+    "centers": {
+      "centers": {
+        "eng": {
+          "name": "开发中心",
+          "slug": "eng",
+          "dir": "agents/engineering",
+          "core": "cline-act",
+          "model_route": "eng",
+          "memory_partition": "eng",
+          "asset_namespace": "engineering",
+          "tool_classes": [
+            "vcs",
+            "runtime",
+            "llm",
+            "assets",
+            "memory"
+          ],
+          "responsibilities": [
+            "拉取/编译/二次开发 GitHub 工程并打包为插件（目录包或 docker 镜像，docker 为可选）",
+            "插件上架：ov-plugin.yaml 登记 → tools.registry 版本+1 → 刷新插件列表页",
+            "插件安装/启动到三大中心（写 policy.yaml 授权并经 mailbox 通知）"
+          ],
+          "workflows": [
+            "W1-fetch-build",
+            "W2-secondary-dev",
+            "W3-logo-rebrand",
+            "W4-git-sync",
+            "W6-plugin-release"
+          ]
+        },
+        "data": {
+          "name": "数策中心",
+          "slug": "data",
+          "dir": "agents/data",
+          "core": "cline",
+          "model_route": "data",
+          "memory_partition": "data",
+          "asset_namespace": "datacenter",
+          "tool_classes": [
+            "scrape",
+            "runtime",
+            "llm",
+            "assets",
+            "memory"
+          ],
+          "responsibilities": [
+            "网页/Excel → 二维表格 → SQLite（db/*.db）入库",
+            "分析各类数据库：统计、口径核对、业务决策支持",
+            "响应 mailbox read_data 信封，回置 dataset URI"
+          ],
+          "workflows": [
+            "D1-table-import",
+            "D2-analysis"
+          ]
+        },
+        "solution": {
+          "name": "方案中心",
+          "slug": "solution",
+          "dir": "agents/solution",
+          "core": "cline-plan",
+          "model_route": "solution",
+          "memory_partition": "solution",
+          "asset_namespace": "solution",
+          "tool_classes": [
+            "scrape",
+            "llm",
+            "assets",
+            "memory"
+          ],
+          "responsibilities": [
+            "存储各类资料、方案样本、产品说明（assets 分层 L0/L1/full）",
+            "生成产品方案与论文（plan 出大纲 → gate 卡点 → 成文）",
+            "事实数据经 mailbox 向数策中心发 read_data 信封"
+          ],
+          "workflows": [
+            "S1-manual",
+            "S2-proposal-paper"
+          ]
+        }
+      }
+    },
+    "paths": {
+      "models": "config/models.yaml",
+      "runtime": "config/runtime.yaml",
+      "policy": "plugins/policy.yaml",
+      "centers": "config/centers.yaml"
+    }
+  }
 }

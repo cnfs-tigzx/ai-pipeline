@@ -31,12 +31,18 @@ import indexpage  # noqa: E402
 PORT = 8765
 
 
+# ---------- API 路由 ----------
+
+PAGE_DIR = indexpage.PAGE_DIR
+
+
 def _build_state():
     inv = indexpage.build()
     inv['services'] = services.all_status([p['slug'] for p in inv['plugins']] +
                                           [d['slug'] for d in inv['docker']])
     inv['cline_mcp'] = {p['slug']: clinecfg.has_server(p['slug']) for p in inv['plugins']}
     inv['control'] = {'connected': True, 'port': PORT}
+    inv['config'] = indexpage.load_config()
     return inv
 
 
@@ -52,6 +58,23 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
+    def _send_file(self, rel):
+        """静态托管：仅允许 IndexPage 目录白名单（零目录穿越）"""
+        safe = os.path.normpath(rel).lstrip('/')
+        full = os.path.join(PAGE_DIR, safe)
+        if not full.startswith(PAGE_DIR) or not os.path.isfile(full):
+            self._send({'ok': False, 'error': 'not found'}, 404)
+            return
+        ctype = 'text/html; charset=utf-8' if full.endswith('.html') else \
+            'application/json' if full.endswith('.json') else 'text/plain; charset=utf-8'
+        body = open(full, 'rb').read()
+        self.send_response(200)
+        self.send_header('Content-Type', ctype)
+        self.send_header('Content-Length', str(len(body)))
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.end_headers()
+        self.wfile.write(body)
+
     def log_message(self, fmt, *args):  # 静默访问日志（动作审计已落盘）
         pass
 
@@ -59,51 +82,99 @@ class Handler(BaseHTTPRequestHandler):
         self._send({'ok': True})
 
     def do_GET(self):
-        if self.path == '/api/state':
-            try:
-                self._send({'ok': True, 'state': _build_state()})
-            except Exception as e:  # noqa: BLE001
-                self._send({'ok': False, 'error': str(e)}, 500)
-        elif self.path == '/api/ping':
-            self._send({'ok': True, 'service': 'ai-three-center-control', 'port': PORT})
-        else:
-            self._send({'ok': False, 'error': 'not found'}, 404)
-
-    def do_POST(self):
-        if self.path != '/api/action':
-            self._send({'ok': False, 'error': 'not found'}, 404)
-            return
+        path = self.path.split('?')[0]
         try:
-            req = json.loads(self.rfile.read(int(self.headers.get('Content-Length', 0))) or b'{}')
-            action, slug = req.get('action', ''), req.get('slug', '')
-            if action == 'start':
-                out = services.start(slug)
-            elif action == 'stop':
-                out = services.stop(slug)
-            elif action == 'status':
-                out = services.status(slug)
-            elif action in ('grant', 'revoke'):
-                center = req.get('center', '')
-                ok, msg = indexpage.policy_edit(center, slug, add=(action == 'grant'))
-                out = {'ok': ok, 'message': msg}
-                if ok and action == 'grant':
-                    mc = indexpage.manifest_mcp_server(slug)
-                    if mc:
-                        out['cline'] = clinecfg.upsert_server(slug, mc)
-                if ok:
-                    indexpage.subprocess_regen_registry()
-                out['state'] = _build_state()
-            elif action == 'configure_mcp':
-                mc = indexpage.manifest_mcp_server(slug)
-                out = clinecfg.upsert_server(slug, mc) if mc else \
-                    {'ok': False, 'error': 'manifest 未定义 mcp_server'}
-            elif action == 'mcp_disable':
-                out = clinecfg.remove_server(slug)
+            if path in ('/', '/index.html'):
+                self._send_file('index.html')
+            elif path == '/api/state':
+                self._send({'ok': True, 'state': _build_state()})
+            elif path == '/api/ping':
+                self._send({'ok': True, 'service': 'ai-three-center-control', 'port': PORT})
+            elif path == '/api/config':
+                self._send({'ok': True, 'config': indexpage.load_config()})
+            elif path == '/api/docs':
+                self._send(indexpage.docs_list())
+            elif path.startswith('/api/static/'):
+                self._send_file(path[len('/api/static/'):])
             else:
-                out = {'ok': False, 'error': 'unknown action: ' + str(action)}
-            self._send(out)
+                self._send({'ok': False, 'error': 'not found'}, 404)
         except Exception as e:  # noqa: BLE001
             self._send({'ok': False, 'error': str(e)}, 500)
+
+    def do_POST(self):
+        path = self.path.split('?')[0]
+        try:
+            req = json.loads(self.rfile.read(int(self.headers.get('Content-Length', 0))) or b'{}')
+            if path == '/api/action':
+                self._send(self._action(req))
+            elif path == '/api/config':
+                self._send(self._config_set(req))
+            elif path == '/api/github':
+                self._send(self._github(req))
+            elif path == '/api/docs':
+                self._send(self._docs(req))
+            else:
+                self._send({'ok': False, 'error': 'not found'}, 404)
+        except Exception as e:  # noqa: BLE001
+            self._send({'ok': False, 'error': str(e)}, 500)
+
+    def _action(self, req):
+        action, slug = req.get('action', ''), req.get('slug', '')
+        if action == 'start':
+            return services.start(slug)
+        if action == 'stop':
+            return services.stop(slug)
+        if action == 'status':
+            return services.status(slug)
+        if action in ('grant', 'revoke'):
+            center = req.get('center', '')
+            ok, msg = indexpage.policy_edit(center, slug, add=(action == 'grant'))
+            out = {'ok': ok, 'message': msg}
+            if ok and action == 'grant':
+                mc = indexpage.manifest_mcp_server(slug)
+                if mc:
+                    out['cline'] = clinecfg.upsert_server(slug, mc)
+            if ok:
+                indexpage.subprocess_regen_registry()
+            out['state'] = _build_state()
+            return out
+        if action == 'configure_mcp':
+            mc = indexpage.manifest_mcp_server(slug)
+            return clinecfg.upsert_server(slug, mc) if mc else \
+                {'ok': False, 'error': 'manifest 未定义 mcp_server'}
+        if action == 'mcp_disable':
+            return clinecfg.remove_server(slug)
+        return {'ok': False, 'error': 'unknown action: ' + str(action)}
+
+    def _config_set(self, req):
+        file = req.get('file', '')
+        keys = req.get('keys', [])
+        value = req.get('value', '')
+        ok, msg, cfg = indexpage.save_config(file, keys, value)
+        return {'ok': ok, 'message': msg, 'config': cfg}
+
+    def _github(self, req):
+        action = req.get('action', '')
+        if action == 'import':
+            return indexpage.github_import(req.get('url', ''))
+        repo = req.get('repo', '')
+        if not repo:
+            return {'ok': False, 'error': '缺少 repo'}
+        return indexpage.github_action(repo, req.get('op', 'status'))
+
+    def _docs(self, req):
+        action = req.get('action', '')
+        if action == 'outline':
+            return indexpage.docs_outline(req.get('topic', ''), req.get('audience', ''))
+        if action == 'full':
+            return indexpage.docs_full(req.get('topic', ''), req.get('outline', ''),
+                                       req.get('audience', ''))
+        if action == 'write':
+            return indexpage.docs_write(req.get('topic', ''), req.get('content', ''),
+                                        req.get('kind', 'manuals'))
+        if action == 'list':
+            return indexpage.docs_list()
+        return {'ok': False, 'error': 'unknown docs action'}
 
 
 if __name__ == '__main__':

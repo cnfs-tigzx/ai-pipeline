@@ -27,15 +27,17 @@
 | data/ db/ repos/ | 运行期落盘 / SQLite / 下游工作区（均 gitignored） |
 | archive/ | 联邦遗产（Mem0/OpenViking/WeKnora 规则与脚本）与历史评估 |
 | scripts/ | git-push.sh · pipeline.sh · deploy-check.sh · one-key.sh · rebuild-deploy.sh · preflight-check.sh · gen-registry.py |
+| launchd/ | 门户常驻服务 plist 模板（indexpage-service.sh install 安装） |
 | .clinerules/ | Cline 兼容入口（仅索引，按需加载各中心规则） |
 
 ## 快速开始
 
 ```
+./scripts/indexpage-service.sh install          # 三中心门户常驻（登录自启）：http://127.0.0.1:8765
 python3 capabilities/selftest.py --skip-llm     # 能力自测（无网络）
 python3 capabilities/selftest.py                # 含方舟真实调用
 python3 orchestration/runner.py run orchestration/flows/data-table-import.flow.yaml
-python3 scripts/gen-registry.py --html          # 刷新工具注册表与插件列表页
+python3 scripts/gen-registry.py --html          # 旧版列表页（门户页走 indexpage.py build）
 ./scripts/git-push.sh sync                      # Git 同步（见 agents/engineering/rules/git-sync-rule.md）
 ```
 

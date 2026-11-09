@@ -8,7 +8,16 @@
 :root{--bg:#f6f8fa;--card:#fff;--ink:#1f2328;--mut:#656d76;--line:#d8dee4;
 --eng:#1a7f37;--data:#0969da;--sol:#8250df;--warn:#9a6700;--danger:#cf222e}
 *{box-sizing:border-box}
-body{margin:0;font-family:-apple-system,"PingFang SC",system-ui,sans-serif;background:var(--bg);color:var(--ink)}
+body{margin:0;font-family:-apple-system,"PingFang SC",system-ui,sans-serif;background:var(--bg);color:var(--ink);display:flex;min-height:100vh}
+nav{width:190px;flex-shrink:0;background:#fff;border-right:1px solid var(--line);
+padding:16px 10px;position:sticky;top:0;height:100vh}
+nav .brand{font-weight:800;font-size:14px;padding:4px 10px 12px;color:var(--ink)}
+nav a{display:block;padding:9px 12px;border-radius:8px;color:var(--ink);text-decoration:none;
+font-size:13.5px;margin-bottom:3px}
+nav a:hover{background:var(--bg)}
+nav a.on{background:#eef3ee;font-weight:700;color:var(--eng)}
+nav a small{display:block;color:var(--mut);font-weight:400;font-size:10.5px}
+nav .foot{margin-top:18px;padding:8px 12px;font-size:10.5px;color:var(--mut);line-height:1.6}
 header{position:sticky;top:0;z-index:9;background:#ffffffee;backdrop-filter:blur(6px);
 border-bottom:1px solid var(--line);padding:14px 22px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
 header h1{font-size:17px;margin:0}
@@ -16,7 +25,29 @@ header .meta{color:var(--mut);font-size:12px}
 .cbadge{font-size:11px;border-radius:99px;padding:3px 10px;font-weight:600}
 .c-eng{background:#dafbe1;color:var(--eng)}.c-data{background:#ddf4ff;color:var(--data)}
 .c-sol{background:#fbefff;color:var(--sol)}
+.wrap{flex:1;min-width:0}
 main{max-width:1080px;margin:0 auto;padding:18px 22px 120px}
+.view{display:none}.view.on{display:block}
+.view h2{font-size:15px;margin:4px 0 10px}
+.field{margin-bottom:12px}
+.field label{display:block;font-size:12px;color:var(--mut);margin-bottom:4px;font-weight:600}
+.field input,.field textarea,.field select{width:100%;border:1px solid var(--line);border-radius:8px;
+padding:8px 10px;font-size:13px;font-family:inherit;background:#fff}
+.field textarea{min-height:120px;resize:vertical}
+.rowbtn{display:flex;gap:10px;flex-wrap:wrap;margin:12px 0}
+.btn{border:0;border-radius:8px;padding:9px 16px;font-weight:700;cursor:pointer;font-size:13px}
+.btn.primary{background:var(--data);color:#fff}
+.btn.green{background:var(--eng);color:#fff}
+.btn.ghost{background:#fff;border:1px solid var(--line)!important;color:var(--ink)}
+.btn:disabled{opacity:.5;cursor:wait}
+.console{background:#0d1117;color:#c9d1d9;border-radius:8px;padding:10px 12px;font-size:11.5px;
+font-family:Menlo,monospace;white-space:pre-wrap;max-height:260px;overflow-y:auto;margin-top:10px}
+.cfggrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+.cfgcard{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px}
+.cfgcard h3{margin:0 0 4px;font-size:13.5px}
+.cfgcard .path{font-size:10.5px;color:var(--mut);font-family:Menlo,monospace;margin-bottom:10px;word-break:break-all}
+.docitem{display:flex;justify-content:space-between;gap:8px;border:1px solid var(--line);
+background:#fff;border-radius:8px;padding:8px 12px;font-size:12.5px;margin-bottom:6px}
 .tabs{display:flex;gap:8px;margin:6px 0 16px}
 .tabs button{border:1px solid var(--line);background:#fff;border-radius:8px;padding:7px 14px;
 cursor:pointer;font-size:13px}
@@ -72,20 +103,76 @@ footer{max-width:1080px;margin:0 auto;padding:0 22px 30px;color:var(--mut);font-
 </style>
 </head>
 <body>
+<nav>
+  <div class="brand">ai-three-center<br>门户</div>
+  <a href="#mcp" data-v="mcp">插件与 MCP<small>启动服务 · 三中心授权</small></a>
+  <a href="#github" data-v="github">GitHub 导入<small>拉取 → 解析 → 部署</small></a>
+  <a href="#docs" data-v="docs">产品功能文档<small>方案中心 · 大纲→成文</small></a>
+  <a href="#cline" data-v="cline">Cline 参数配置<small>开发 / 数策 / 方案</small></a>
+  <a href="#rules" data-v="rules">全局规则配置<small>runtime · policy</small></a>
+  <div class="foot">配置即文件：每个页面的修改都写回工程目录对应配置文件（config/ · plugins/），写前自动备份 .auto-bak/。</div>
+</nav>
+<div class="wrap">
 <header>
-  <h1>三中心门户 · 插件与 MCP 服务</h1>
+  <h1 id="vtitle">三中心门户</h1>
   <span class="meta">registry v<span id="rv"></span> · 生成于 <span id="gt"></span></span>
   <span id="cbadges" style="display:flex;gap:6px"></span>
   <span id="connlbl"><span class="dot off" id="conn"></span> <span id="conntxt">检测控制台…</span></span>
 </header>
 <main>
-  <div class="tabs" id="tabs"></div>
-  <div class="grid" id="grid"></div>
+  <div class="view" id="v-mcp">
+    <div class="tabs" id="tabs"></div>
+    <div class="grid" id="grid"></div>
+  </div>
+  <div class="view" id="v-github">
+    <h2>GitHub 拉取 → 解析 → 编译部署</h2>
+    <div class="field"><label>仓库地址（https / git@）</label>
+      <input id="gh-url" placeholder="https://github.com/owner/repo.git"></div>
+    <div class="rowbtn">
+      <button class="btn primary" id="gh-import" onclick="ghImport()">拉取并解析</button>
+      <button class="btn ghost" id="gh-status" onclick="ghOp('status')">部署状态</button>
+      <button class="btn green" id="gh-start" onclick="ghOp('start')">编译部署（start）</button>
+      <button class="btn ghost" id="gh-stop" onclick="ghOp('stop')">停止</button>
+      <button class="btn ghost" id="gh-build" onclick="ghOp('build')">重新构建</button>
+    </div>
+    <div class="cfggrid" id="gh-parse"></div>
+    <div class="console" id="gh-out" style="display:none"></div>
+  </div>
+  <div class="view" id="v-docs">
+    <h2>产品功能文档（方案中心）</h2>
+    <div class="cfggrid">
+      <div class="cfgcard">
+        <h3>1 · 生成大纲</h3>
+        <div class="field"><label>主题</label><input id="doc-topic" placeholder="如：TabClaw 产品功能说明"></div>
+        <div class="field"><label>读者（可选）</label><input id="doc-aud" placeholder="产品 / 业务 / 测试"></div>
+        <div class="rowbtn"><button class="btn primary" id="doc-ol" onclick="docOutline()">生成大纲</button></div>
+      </div>
+      <div class="cfgcard">
+        <h3>2 · 大纲（可人工编辑）</h3>
+        <div class="field"><textarea id="doc-outline" placeholder="点击左侧生成，或直接粘贴人工大纲"></textarea></div>
+        <div class="rowbtn">
+          <button class="btn green" id="doc-full" onclick="docFull()">按大纲成文</button>
+          <button class="btn ghost" onclick="docSave('manuals')">保存到说明书</button>
+          <button class="btn ghost" onclick="docSave('papers')">保存到论文</button>
+        </div>
+      </div>
+    </div>
+    <div class="console" id="doc-preview" style="display:none"></div>
+    <h2 style="margin-top:22px">已归档文档 <small style="color:var(--mut);font-weight:400" id="doc-list-path"></small></h2>
+    <div id="doc-list"></div>
+  </div>
+  <div class="view" id="v-cline">
+    <h2>Cline 参数配置（三中心模型路由）</h2>
+    <div class="cfggrid" id="cline-cards"></div>
+  </div>
+  <div class="view" id="v-rules">
+    <h2>全局规则配置</h2>
+    <div class="cfggrid" id="rules-cards"></div>
+  </div>
 </main>
 <footer>
-  决策闭环：切换开关 → 底部「导出决策」下载 decisions.json → 放到 plugins/IndexPage/decisions.json →
-  终端执行 <code>python3 scripts/indexpage.py apply</code> → 本页重新生成后生效。
-  MCP 类授权位于 Cline 扩展设置（本页仅导出人工操作清单）。虚线描边的开关为待应用变更。
+  决策闭环：互联模式（控制台已连接）下按钮与开关点击即时生效并写回配置文件；离线模式切换开关 → 导出 decisions.json →
+  <code>python3 scripts/indexpage.py apply</code>。配置页保存即写回 config/ 与 plugins/ 对应文件（写前备份 .auto-bak/）。
 </footer>
 <div class="panel" id="panel">
   <div class="list" id="plist"></div>
@@ -343,6 +430,201 @@ function svcAction(slug, act){
   }).catch(e => { toast('控制台异常：' + e); btns.forEach(b => b.disabled = false); });
 }
 
+// ---- 视图路由（左导航） ----
+const VIEWS = {
+  mcp: '插件与 MCP 服务',
+  github: 'GitHub 拉取 · 解析 · 部署',
+  docs: '产品功能文档（方案中心）',
+  cline: 'Cline 参数配置（三中心）',
+  rules: '全局规则配置',
+};
+
+function setView(v){
+  if (!VIEWS[v]) v = 'mcp';
+  document.querySelectorAll('.view').forEach(el => el.classList.toggle('on', el.id === 'v-' + v));
+  document.querySelectorAll('nav a').forEach(a => a.classList.toggle('on', a.dataset.v === v));
+  document.getElementById('vtitle').textContent = VIEWS[v];
+  if (v === 'cline') renderCline();
+  if (v === 'rules') renderRules();
+  if (v === 'docs') docList();
+}
+window.addEventListener('hashchange', () => setView(location.hash.slice(1)));
+
+function post(path, body){
+  return fetch(CTRL + path, {method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(body || {})}).then(r => r.json());
+}
+
+// ---- GitHub 导入视图 ----
+let GH_REPO = '';
+
+function ghRepoGuess(){
+  if (GH_REPO) return GH_REPO;
+  const url = document.getElementById('gh-url').value.trim();
+  return url.split('/').pop().replace(/\.git$/, '');
+}
+
+async function ghImport(){
+  const url = document.getElementById('gh-url').value.trim();
+  if (!url.startsWith('http')) return toast('请输入 http(s) 仓库地址');
+  btnLock(true);
+  const r = await post('/api/github', {action: 'import', url});
+  btnLock(false);
+  GH_REPO = r.repo || GH_REPO;
+  if (r.parse && r.parse.saved){
+    const p = r.parse;
+    document.getElementById('gh-parse').innerHTML =
+      '<div class="cfgcard"><h3>' + p.repo + ' · ' + p.deploy_mode + '</h3>' +
+      '<div class="path">' + p.saved + '</div>' +
+      '<div class="kv"><b>简介</b>：' + (p.intro || '-') + '</div>' +
+      '<div class="kv"><b>端口线索</b>：' + (p.ports.length ? p.ports.join(', ') : '-') + '</div>' +
+      '<div class="kv">下一步：编译部署（one-key 自动检测 docker/native 模式）</div></div>';
+  } else {
+    document.getElementById('gh-parse').innerHTML =
+      '<div class="cfgcard"><h3>解析失败</h3><div class="path">' + (r.error || '仓库不存在') + '</div></div>';
+  }
+  showOut(r.output || r.error || '');
+}
+
+async function ghOp(op){
+  const repo = ghRepoGuess();
+  if (!repo) return toast('请先输入仓库地址');
+  btnLock(true);
+  const r = await post('/api/github', {repo, op});
+  btnLock(false);
+  showOut(r.output || r.error || JSON.stringify(r, null, 1));
+}
+
+function showOut(txt){
+  const el = document.getElementById('gh-out');
+  el.style.display = 'block';
+  el.textContent = txt || '（无输出）';
+}
+
+function btnLock(on){
+  document.querySelectorAll('.btn,.svc').forEach(b => b.disabled = on);
+}
+
+// ---- 产品文档视图（对应 data/assets/solution/） ----
+let DOC_PREVIEW = '';
+
+async function docOutline(){
+  const topic = document.getElementById('doc-topic').value.trim();
+  if (!topic) return toast('请输入主题');
+  btnLock(true);
+  const r = await post('/api/docs', {action: 'outline', topic,
+    audience: document.getElementById('doc-aud').value.trim()});
+  btnLock(false);
+  if (r.degraded){
+    toast('模型降级（doubao 接入点未配置或限流），请在下方人工编写大纲');
+    return;
+  }
+  document.getElementById('doc-outline').value = r.text;
+  toast('大纲已生成，可人工编辑后成文');
+}
+
+async function docFull(){
+  const outline = document.getElementById('doc-outline').value.trim();
+  const topic = document.getElementById('doc-topic').value.trim();
+  if (!outline) return toast('大纲为空：先生成或人工编写');
+  btnLock(true);
+  const r = await post('/api/docs', {action: 'full', topic, outline,
+    audience: document.getElementById('doc-aud').value.trim()});
+  btnLock(false);
+  DOC_PREVIEW = r.text || '';
+  const el = document.getElementById('doc-preview');
+  el.style.display = 'block';
+  el.textContent = r.degraded
+    ? '【模型降级】' + (r.error || '') + '\n请人工编辑大纲后保存，或在 Cline（plan 模式）中完成成文。'
+    : DOC_PREVIEW || '（空）';
+}
+
+async function docSave(kind){
+  const topic = document.getElementById('doc-topic').value.trim() || 'untitled';
+  const content = DOC_PREVIEW || document.getElementById('doc-outline').value;
+  if (!content.trim()) return toast('无内容可保存');
+  const r = await post('/api/docs', {action: 'write', topic, content, kind});
+  toast('已归档：' + (r.uri || r.error));
+  docList();
+}
+
+async function docList(){
+  try {
+    const r = await fetch(CTRL + '/api/docs').then(x => x.json());
+    document.getElementById('doc-list-path').textContent =
+      'data/assets/solution/{manuals,papers}/';
+    document.getElementById('doc-list').innerHTML = (r.items || []).map(i =>
+      '<div class="docitem"><span>' + i.uri + '</span><span style="color:var(--mut)">' +
+      i.size + 'B · ' + i.updated + '</span></div>').join('') || '<div class="docitem">暂无归档文档</div>';
+  } catch (e) {
+    document.getElementById('doc-list').innerHTML = '<div class="docitem">离线模式：归档列表需控制台</div>';
+  }
+}
+// ---- Cline 参数配置视图（写 config/models.yaml routing.<center>.primary） ----
+function renderCline(){
+  const cfg = INVENTORY.config;
+  const grid = document.getElementById('cline-cards');
+  if (!cfg){ grid.innerHTML = '<div class="empty">离线模式：配置编辑需控制台（python3 scripts/control_server.py）</div>'; return; }
+  grid.innerHTML = ['eng', 'data', 'solution'].map(c => {
+    const cc = (cfg.centers.centers || {})[c] || {};
+    const rt = (cfg.models.routing || {})[c] || {};
+    const series = {eng: 'GLM（act）', data: 'deepseek', solution: 'doubao（plan）'}[c];
+    return '<div class="cfgcard"><h3>' + (cc.name || c) + ' <small style="color:var(--mut)">内核 ' + (cc.core || '-') +
+      '</small></h3><div class="path">' + cfg.paths.models + ' · routing.' + c + '</div>' +
+      '<div class="field"><label>primary 接入点 ID</label><input id="cfg-' + c + '-p" value="' + (rt.primary || '') + '"></div>' +
+      '<div class="field"><label>fallback（只读，高级场景直接编辑 models.yaml）</label>' +
+      '<input value="' + (rt.fallback && rt.fallback.length ? rt.fallback.join(',') : '-') + '" readonly style="color:var(--mut)"></div>' +
+      '<div class="rowbtn"><button class="btn primary" onclick="saveCline(\'' + c + '\')">保存到 models.yaml</button></div>' +
+      '<div class="kv">模型系列：' + series + ' · 工作流：' + (cc.workflows || []).join(', ') + '</div></div>';
+  }).join('');
+}
+
+async function saveCline(c){
+  const p = document.getElementById('cfg-' + c + '-p').value.trim();
+  const r = await post('/api/config', {file: 'models', keys: ['routing', c, 'primary'], value: p});
+  toast(r.ok === false ? '失败：' + r.message : '已写入 models.yaml：routing.' + c + '.primary = ' + p);
+  if (r.config){ INVENTORY.config = r.config; renderCline(); }
+}
+
+// ---- 全局规则视图（写 config/runtime.yaml + plugins/policy.yaml） ----
+function numField(label, file, keys, val){
+  return '<div class="field"><label>' + label + '</label>' +
+    '<input id="f-' + keys.join('-') + '" value="' + val + '"></div>' +
+    '<div class="rowbtn"><button class="btn primary" onclick="saveCfg(\'' + file + '\',\'' +
+    keys.join('|') + '\', document.getElementById(\'f-' + keys.join('-') + '\').value)">保存</button></div>';
+}
+
+function renderRules(){
+  const cfg = INVENTORY.config;
+  const grid = document.getElementById('rules-cards');
+  if (!cfg){ grid.innerHTML = '<div class="empty">离线模式：配置编辑需控制台</div>'; return; }
+  const rt = cfg.runtime, pol = cfg.policy;
+  grid.innerHTML =
+    '<div class="cfgcard"><h3>runner（orchestration）</h3><div class="path">' + cfg.paths.runtime + '</div>' +
+    numField('轮询间隔 poll_interval_s（秒）', 'runtime', ['runner', 'poll_interval_s'], rt.runner.poll_interval_s) + '</div>' +
+    '<div class="cfgcard"><h3>LLM 超时与重试</h3><div class="path">' + cfg.paths.runtime + ' · llm</div>' +
+    numField('timeout_s', 'runtime', ['llm', 'timeout_s'], rt.llm.timeout_s) +
+    numField('max_retries', 'runtime', ['llm', 'max_retries'], rt.llm.max_retries) + '</div>' +
+    '<div class="cfgcard"><h3>信封 mailbox</h3><div class="path">' + cfg.paths.runtime + ' · mailbox</div>' +
+    numField('deadline_default_s', 'runtime', ['mailbox', 'deadline_default_s'], rt.mailbox.deadline_default_s) +
+    numField('retention_days（保留期）', 'runtime', ['mailbox', 'retention_days'], rt.mailbox.retention_days) + '</div>' +
+    '<div class="cfgcard"><h3>节点失败策略 node</h3><div class="path">' + cfg.paths.runtime + ' · node</div>' +
+    numField('max_retries（超限按 on_fail）', 'runtime', ['node', 'max_retries'], rt.node.max_retries) + '</div>' +
+    '<div class="cfgcard"><h3>插件审批（policy.yaml）</h3><div class="path">' + cfg.paths.policy + ' · approval</div>' +
+    '<div class="field"><label>high_risk_tools（高风险工具）</label><select id="f-hrt">' +
+    ['gate', 'manual'].map(v => '<option ' + (pol.approval.high_risk_tools === v ? 'selected' : '') + '>' + v + '</option>').join('') +
+    '</select></div><div class="rowbtn"><button class="btn primary" onclick="saveCfg(\'policy\', \'approval|high_risk_tools\', document.getElementById(\'f-hrt\').value)">保存</button></div>' +
+    '<div class="kv">审计目录：' + pol.defaults.audit_dir + ' · 参数哈希：' + pol.defaults.param_hash + '</div></div>';
+}
+
+async function saveCfg(file, keysJoined, value){
+  const keys = keysJoined.split('|');
+  const r = await post('/api/config', {file, keys, value});
+  toast(r.ok === false ? '失败：' + r.message : '已写入：' + r.message);
+  if (r.config){ INVENTORY.config = r.config; renderRules(); }
+}
+
+// ---- 启动：探测控制台 → 拉取状态 → 进入默认视图 ----
 function init(){
   fetch(CTRL + '/api/ping', {signal: AbortSignal.timeout ? AbortSignal.timeout(1500) : undefined})
     .then(r => r.json()).then(p => {
@@ -354,6 +636,7 @@ function init(){
           applyState(res.state);
           syncPending();   // 用互联拉取的最新授权状态对齐待应用项
           render();
+          setView(location.hash.slice(1) || 'mcp');
         });
       }
       throw new Error('not ok');
@@ -364,6 +647,7 @@ function init(){
       document.getElementById('conntxt').textContent =
         '控制台未连接 · 离线决策模式（启动: python3 scripts/control_server.py）';
       render();
+      setView(location.hash.slice(1) || 'mcp');
     });
 }
 
